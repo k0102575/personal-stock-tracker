@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Vanity Stock Maskable Icon</title>
+  <rect width="512" height="512" rx="144" fill="#d58a74"/>
+  <rect x="64" y="64" width="384" height="384" rx="108" fill="#f7f1ea"/>
+  <path fill="#f4c7b8" d="M180 168h152c21 0 38 17 38 38v118c0 21-17 38-38 38H180c-21 0-38-17-38-38V206c0-21 17-38 38-38Z"/>
+  <path fill="#7a5045" d="M214 132h84c13 0 24 11 24 24v18H190v-18c0-13 11-24 24-24Zm-14 112h112v24H200zm0 48h80v24h-80z"/>
+</svg>
