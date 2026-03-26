@@ -36,7 +36,7 @@ async function request<T>(
     });
 
     if (!response.ok) {
-      let message = "Request failed.";
+      let message = "요청 처리에 실패했습니다.";
       try {
         const payload = (await response.json()) as { error?: string };
         if (payload.error) {
@@ -149,7 +149,7 @@ export const api = {
     });
 
     if (!response.ok) {
-      throw new ApiError(response.status, "Export failed.");
+      throw new ApiError(response.status, "내보내기에 실패했습니다.");
     }
 
     const blob = await response.blob();
@@ -169,5 +169,5 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }
-  return "Something went wrong.";
+  return "문제가 발생했습니다.";
 }

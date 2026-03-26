@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 
 export function PwaStatus() {
-  const {
-    offlineReady: [offlineReady, setOfflineReady],
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker
-  } = useRegisterSW();
+  useRegisterSW();
   const [isOffline, setIsOffline] = useState(() =>
     typeof navigator !== "undefined" ? !navigator.onLine : false
   );
@@ -33,36 +29,7 @@ export function PwaStatus() {
     <>
       {isOffline && (
         <div className="floating-banner" role="status">
-          Offline mode: cached screens and recent item data remain available.
-        </div>
-      )}
-
-      {(offlineReady || needRefresh) && (
-        <div className="update-toast" role="status">
-          <div>
-            <strong>{needRefresh ? "Update available" : "Offline ready"}</strong>
-            <p>
-              {needRefresh
-                ? "A new version is available. Refresh to apply it."
-                : "Core screens and recent API data are cached on this device."}
-            </p>
-          </div>
-          <div className="update-toast__actions">
-            {needRefresh ? (
-              <button className="button button--primary" onClick={() => updateServiceWorker(true)}>
-                Refresh
-              </button>
-            ) : null}
-            <button
-              className="button button--ghost"
-              onClick={() => {
-                setOfflineReady(false);
-                setNeedRefresh(false);
-              }}
-            >
-              Dismiss
-            </button>
-          </div>
+          오프라인 상태예요. 최근에 본 화면과 품목 정보는 계속 확인할 수 있습니다.
         </div>
       )}
     </>

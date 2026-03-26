@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { APP_NAME } from "../shared/labels";
 
 interface EmptyStateProps {
   title: string;
@@ -15,7 +16,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="empty-state panel">
-      <p className="eyebrow">Nothing here yet</p>
+      <p className="eyebrow">{APP_NAME}</p>
       <h2>{title}</h2>
       <p className="muted-text">{description}</p>
       {actionLabel && actionTo ? (

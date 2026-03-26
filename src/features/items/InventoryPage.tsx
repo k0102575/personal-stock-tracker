@@ -6,6 +6,12 @@ import { useDeferredValue, useState } from "react";
 import { EmptyState } from "../../components/EmptyState";
 import { api, getErrorMessage } from "../../lib/api";
 import { ITEM_CATEGORIES, ITEM_SORTS, ITEM_STATUSES } from "../../shared/constants";
+import {
+  getCategoryLabel,
+  getExpiryFilterLabel,
+  getSortLabel,
+  getStatusLabel
+} from "../../shared/labels";
 import type { ItemListFilters } from "../../shared/types";
 import { ItemCard } from "./ItemCard";
 
@@ -37,16 +43,16 @@ export function InventoryPage() {
     <div className="stack-lg">
       <section className="panel stack-md">
         <div className="section-heading">
-          <h2>Browse your stash</h2>
-          <span className="muted-text">Search before you buy again.</span>
+          <h2>보관함 둘러보기</h2>
+          <span className="muted-text">다시 사기 전에 먼저 검색해보세요.</span>
         </div>
 
         <div className="stack-sm">
           <label className="field">
-            <span className="field-label">Search</span>
+            <span className="field-label">검색</span>
             <input
               className="input"
-              placeholder="Brand, item name, or note"
+              placeholder="브랜드, 품목명, 메모로 검색"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -54,7 +60,7 @@ export function InventoryPage() {
 
           <div className="field-grid">
             <label className="field">
-              <span className="field-label">Category</span>
+              <span className="field-label">카테고리</span>
               <select
                 className="input"
                 value={category}
@@ -64,17 +70,17 @@ export function InventoryPage() {
                   )
                 }
               >
-                <option value="all">All</option>
+                <option value="all">전체</option>
                 {ITEM_CATEGORIES.map((entry) => (
                   <option key={entry} value={entry}>
-                    {entry}
+                    {getCategoryLabel(entry)}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="field">
-              <span className="field-label">Status</span>
+              <span className="field-label">상태</span>
               <select
                 className="input"
                 value={status}
@@ -82,17 +88,17 @@ export function InventoryPage() {
                   setStatus(event.target.value as NonNullable<ItemListFilters["status"]>)
                 }
               >
-                <option value="all">All</option>
+                <option value="all">전체</option>
                 {ITEM_STATUSES.map((entry) => (
                   <option key={entry} value={entry}>
-                    {entry.replace("_", " ")}
+                    {getStatusLabel(entry)}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="field">
-              <span className="field-label">Expiry</span>
+              <span className="field-label">우선 유통기한</span>
               <select
                 className="input"
                 value={expiry}
@@ -100,14 +106,14 @@ export function InventoryPage() {
                   setExpiry(event.target.value as NonNullable<ItemListFilters["expiry"]>)
                 }
               >
-                <option value="all">All</option>
-                <option value="soon">Soon</option>
-                <option value="expired">Expired</option>
+                <option value="all">{getExpiryFilterLabel("all")}</option>
+                <option value="soon">{getExpiryFilterLabel("soon")}</option>
+                <option value="expired">{getExpiryFilterLabel("expired")}</option>
               </select>
             </label>
 
             <label className="field">
-              <span className="field-label">Sort</span>
+              <span className="field-label">정렬</span>
               <select
                 className="input"
                 value={sort}
@@ -117,11 +123,7 @@ export function InventoryPage() {
               >
                 {ITEM_SORTS.map((entry) => (
                   <option key={entry} value={entry}>
-                    {entry === "updated_desc"
-                      ? "Recently updated"
-                      : entry === "expiry_asc"
-                        ? "Expiry soonest"
-                        : "Name"}
+                    {getSortLabel(entry)}
                   </option>
                 ))}
               </select>
@@ -134,30 +136,30 @@ export function InventoryPage() {
               onChange={(event) => setRestockOnly(event.target.checked)}
               type="checkbox"
             />
-            <span>Restock needed only</span>
+            <span>재구매 필요한 항목만 보기</span>
           </label>
         </div>
       </section>
 
       {itemsQuery.isPending ? (
-        <div className="panel">Loading inventory...</div>
+        <div className="panel">보관함을 불러오는 중입니다...</div>
       ) : itemsQuery.isError ? (
         <div className="panel inline-alert" role="alert">
           {getErrorMessage(itemsQuery.error)}
         </div>
       ) : itemsQuery.data.length === 0 ? (
         <EmptyState
-          title="No items match these filters"
-          description="Try clearing a filter or add a new product to track it here."
-          actionLabel="Add new item"
+          title="조건에 맞는 품목이 없습니다"
+          description="필터를 조금 완화하거나 새 품목을 등록해서 여기서 관리해보세요."
+          actionLabel="새 품목 등록"
           actionTo="/items/new"
         />
       ) : (
         <>
           <div className="section-heading">
-            <h2>{itemsQuery.data.length} items</h2>
+            <h2>총 {itemsQuery.data.length}개 품목</h2>
             <span className="muted-text">
-              Cached for offline access after you open them once.
+              한 번 열어본 항목은 오프라인에서도 다시 확인할 수 있어요.
             </span>
           </div>
           <div className="inventory-list">

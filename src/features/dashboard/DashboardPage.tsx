@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { EmptyState } from "../../components/EmptyState";
 import { api, getErrorMessage } from "../../lib/api";
 import { formatDate, getInventorySignals } from "../../lib/inventory";
+import { getCategoryLabel } from "../../shared/labels";
 
 export function DashboardPage() {
   const summaryQuery = useQuery({
@@ -11,7 +12,7 @@ export function DashboardPage() {
   });
 
   if (summaryQuery.isPending) {
-    return <div className="panel">Loading dashboard...</div>;
+    return <div className="panel">대시보드를 불러오는 중입니다...</div>;
   }
 
   if (summaryQuery.isError) {
@@ -27,9 +28,9 @@ export function DashboardPage() {
   if (summary.totalItems === 0) {
     return (
       <EmptyState
-        title="Start your personal care inventory"
-        description="Add your first product so you can check stock, expiry, and restock needs before shopping."
-        actionLabel="Add first item"
+        title="첫 품목을 등록하고 재고 관리를 시작해보세요"
+        description="쇼핑 전에 이미 가지고 있는 제품과 우선 유통기한, 재구매 필요 여부를 먼저 확인할 수 있어요."
+        actionLabel="첫 품목 등록"
         actionTo="/items/new"
       />
     );
@@ -39,48 +40,48 @@ export function DashboardPage() {
     <div className="stack-lg">
       <section className="hero-card">
         <div>
-          <p className="eyebrow">Daily snapshot</p>
-          <h2>{summary.totalItems} products in rotation</h2>
+          <p className="eyebrow">오늘의 요약</p>
+          <h2>현재 관리 중인 품목 {summary.totalItems}개</h2>
           <p className="muted-text">
-            Keep a fast view of what needs attention before your next store or pharmacy run.
+            다음 쇼핑 전에 확인이 필요한 재고와 우선 유통기한을 빠르게 살펴보세요.
           </p>
         </div>
         <div className="hero-actions">
           <Link className="button button--primary" to="/inventory">
-            Open inventory
+            보관함 보기
           </Link>
           <Link className="button button--secondary" to="/items/new">
-            Quick add
+            빠른 등록
           </Link>
         </div>
       </section>
 
       <section className="summary-grid">
         <article className="stat-card">
-          <span className="stat-card__label">Low stock</span>
+          <span className="stat-card__label">재고 부족</span>
           <strong>{summary.lowStockCount}</strong>
         </article>
         <article className="stat-card">
-          <span className="stat-card__label">Expiring soon</span>
+          <span className="stat-card__label">우선 유통기한 임박</span>
           <strong>{summary.expiringSoonCount}</strong>
         </article>
         <article className="stat-card">
-          <span className="stat-card__label">Expired</span>
+          <span className="stat-card__label">우선 유통기한 경과</span>
           <strong>{summary.expiredCount}</strong>
         </article>
       </section>
 
       <section className="panel stack-md">
         <div className="section-heading">
-          <h2>Category spread</h2>
+          <h2>카테고리 분포</h2>
           <Link className="text-link" to="/inventory">
-            View all
+            전체 보기
           </Link>
         </div>
         <div className="chip-row">
           {summary.categories.map((entry) => (
             <span className="chip" key={entry.category}>
-              {entry.category} / {entry.count}
+              {getCategoryLabel(entry.category)} {entry.count}개
             </span>
           ))}
         </div>
@@ -88,9 +89,9 @@ export function DashboardPage() {
 
       <section className="panel stack-md">
         <div className="section-heading">
-          <h2>Recently updated</h2>
+          <h2>최근 업데이트</h2>
           <Link className="text-link" to="/inventory">
-            Manage items
+            품목 관리
           </Link>
         </div>
         <div className="stack-sm">
@@ -101,14 +102,14 @@ export function DashboardPage() {
                 <div>
                   <strong>{item.name}</strong>
                   <p className="muted-text">
-                    {item.brand || item.category} / Updated {formatDate(item.updatedAt)}
+                    {item.brand || getCategoryLabel(item.category)} / 수정일 {formatDate(item.updatedAt)}
                   </p>
                 </div>
                 <div className="badge-row">
-                  {signals.lowStock && <span className="badge badge--warning">Low stock</span>}
-                  {signals.expired && <span className="badge badge--danger">Expired</span>}
+                  {signals.lowStock && <span className="badge badge--warning">재고 부족</span>}
+                  {signals.expired && <span className="badge badge--danger">우선 유통기한 경과</span>}
                   {!signals.expired && signals.expiringSoon && (
-                    <span className="badge badge--neutral">Soon</span>
+                    <span className="badge badge--neutral">우선 유통기한 임박</span>
                   )}
                 </div>
               </Link>

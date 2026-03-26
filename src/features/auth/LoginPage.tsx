@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../../lib/api";
+import { APP_NAME } from "../../shared/labels";
 import { useAuth } from "./AuthProvider";
 
 export function LoginPage() {
@@ -18,7 +19,7 @@ export function LoginPage() {
     event.preventDefault();
 
     if (!password.trim()) {
-      setFormError("Enter the admin password.");
+      setFormError("관리자 비밀번호를 입력해주세요.");
       return;
     }
 
@@ -37,16 +38,15 @@ export function LoginPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <p className="eyebrow">Personal care inventory</p>
-        <h1>Know what you already own before you buy again.</h1>
+        <p className="eyebrow">{APP_NAME}</p>
+        <h1>사기 전에, 지금 있는 재고부터 확인하세요.</h1>
         <p className="muted-text">
-          Track skincare, perfumes, ointments, and other essentials with a single
-          admin password and offline-ready mobile access.
+          생활용품과 소모품 재고를 간단하게 기록하고, 모바일에서도 이어서 확인할 수 있습니다.
         </p>
 
         <form className="stack-md" onSubmit={handleSubmit}>
           <label className="field">
-            <span className="field-label">Admin password</span>
+            <span className="field-label">관리자 비밀번호</span>
             <input
               className="input"
               autoComplete="current-password"
@@ -54,7 +54,7 @@ export function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
+              placeholder="비밀번호를 입력하세요"
             />
           </label>
 
@@ -65,7 +65,7 @@ export function LoginPage() {
           )}
 
           <button className="button button--primary button--full" disabled={auth.loginPending}>
-            {auth.loginPending ? "Unlocking..." : "Unlock inventory"}
+            {auth.loginPending ? "잠금 해제 중..." : "보관함 열기"}
           </button>
         </form>
       </div>

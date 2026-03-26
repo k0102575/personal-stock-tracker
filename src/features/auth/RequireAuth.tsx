@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
+import { APP_NAME } from "../../shared/labels";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -9,9 +10,9 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     return (
       <div className="auth-shell">
         <div className="auth-card auth-card--compact">
-          <p className="eyebrow">Vanity Stock</p>
-          <h1>Checking your session</h1>
-          <p className="muted-text">Restoring secure access to your inventory.</p>
+          <p className="eyebrow">{APP_NAME}</p>
+          <h1>세션을 확인하고 있어요</h1>
+          <p className="muted-text">안전하게 저장된 로그인 상태를 불러오는 중입니다.</p>
         </div>
       </div>
     );

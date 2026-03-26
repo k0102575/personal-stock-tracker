@@ -6,6 +6,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, getErrorMessage } from "../../lib/api";
 import { formatDate, getInventorySignals, getItemSubtitle, getMinimumLabel, getQuantityLabel } from "../../lib/inventory";
+import { getCategoryLabel, getStatusLabel } from "../../shared/labels";
 
 export function ItemDetailPage() {
   const { id = "" } = useParams();
@@ -29,7 +30,7 @@ export function ItemDetailPage() {
   });
 
   if (itemQuery.isPending) {
-    return <div className="panel">Loading item...</div>;
+    return <div className="panel">품목 정보를 불러오는 중입니다...</div>;
   }
 
   if (itemQuery.isError) {
@@ -48,77 +49,65 @@ export function ItemDetailPage() {
       <section className="detail-card">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">{item.category}</p>
+            <p className="eyebrow">{getCategoryLabel(item.category)}</p>
             <h2>{item.name}</h2>
             <p className="muted-text">{getItemSubtitle(item)}</p>
           </div>
-          <span className="status-pill">{item.status.replace("_", " ")}</span>
+          <span className="status-pill">{getStatusLabel(item.status)}</span>
         </div>
 
         <div className="badge-row">
-          {signals.lowStock && <span className="badge badge--warning">Low stock</span>}
-          {signals.expired && <span className="badge badge--danger">Expired</span>}
+          {signals.lowStock && <span className="badge badge--warning">재고 부족</span>}
+          {signals.expired && <span className="badge badge--danger">우선 유통기한 경과</span>}
           {!signals.expired && signals.expiringSoon && (
-            <span className="badge badge--neutral">Expiry soon</span>
+            <span className="badge badge--neutral">우선 유통기한 임박</span>
           )}
         </div>
 
         <dl className="meta-grid">
           <div>
-            <dt>Current quantity</dt>
+            <dt>현재 수량</dt>
             <dd>{getQuantityLabel(item)}</dd>
           </div>
           <div>
-            <dt>Minimum quantity</dt>
+            <dt>기준 수량</dt>
             <dd>{getMinimumLabel(item)}</dd>
           </div>
           <div>
-            <dt>Purchased from</dt>
-            <dd>{item.purchaseSource || "Not set"}</dd>
-          </div>
-          <div>
-            <dt>Purchase date</dt>
-            <dd>{formatDate(item.purchaseDate)}</dd>
-          </div>
-          <div>
-            <dt>Opened date</dt>
-            <dd>{formatDate(item.openedDate)}</dd>
-          </div>
-          <div>
-            <dt>Expiry date</dt>
+            <dt>우선 유통기한</dt>
             <dd>{formatDate(item.expiryDate)}</dd>
           </div>
           <div>
-            <dt>Created</dt>
+            <dt>생성일</dt>
             <dd>{formatDate(item.createdAt)}</dd>
           </div>
           <div>
-            <dt>Updated</dt>
+            <dt>수정일</dt>
             <dd>{formatDate(item.updatedAt)}</dd>
           </div>
         </dl>
 
         <div className="stack-sm">
-          <h3>Notes</h3>
-          <p className="note-box">{item.memo || "No notes saved."}</p>
+          <h3>메모</h3>
+          <p className="note-box">{item.memo || "저장된 메모가 없습니다."}</p>
         </div>
       </section>
 
       <div className="sticky-action-bar">
         <Link className="button button--secondary" to={`/items/${item.id}/edit`}>
-          Edit
+          수정
         </Link>
         <button
           className="button button--danger"
           disabled={deleteMutation.isPending}
           onClick={() => {
-            if (window.confirm(`Delete "${item.name}" from your inventory?`)) {
+            if (window.confirm(`"${item.name}" 항목을 보관함에서 삭제할까요?`)) {
               deleteMutation.mutate();
             }
           }}
           type="button"
         >
-          {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          {deleteMutation.isPending ? "삭제 중..." : "삭제"}
         </button>
       </div>
 
