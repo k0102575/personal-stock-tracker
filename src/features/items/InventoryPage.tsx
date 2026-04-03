@@ -3,6 +3,17 @@ import {
   useQuery
 } from "@tanstack/react-query";
 import { useDeferredValue, useState } from "react";
+import { Search, SlidersHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { EmptyState } from "../../components/EmptyState";
 import { api, getErrorMessage } from "../../lib/api";
 import { ITEM_CATEGORIES, ITEM_SORTS, ITEM_STATUSES } from "../../shared/constants";
@@ -40,111 +51,159 @@ export function InventoryPage() {
   });
 
   return (
-    <div className="stack-lg">
-      <section className="panel stack-md">
-        <div className="section-heading">
-          <h2>보관함 둘러보기</h2>
-          <span className="muted-text">다시 사기 전에 먼저 검색해보세요.</span>
-        </div>
+    <div className="space-y-6">
+      <Card className="sticky top-[7.75rem] z-20 bg-[rgba(250,249,246,0.86)] backdrop-blur-xl">
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="space-y-2">
+              <p className="eyebrow">보관함 둘러보기</p>
+              <CardTitle>다시 사기 전에 먼저 검색해보세요</CardTitle>
+              <CardDescription>
+                카테고리, 상태, 우선 유통기한을 조합해서 필요한 물건만 빠르게 걸러낼 수
+                있습니다.
+              </CardDescription>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-surface-container-lowest px-4 py-2 text-sm text-muted-foreground shadow-[0_8px_20px_rgba(47,52,48,0.03)]">
+              <SlidersHorizontal className="size-4" />
+              <span>필터</span>
+            </div>
+          </div>
+        </CardHeader>
 
-        <div className="stack-sm">
-          <label className="field">
+        <CardContent className="space-y-4">
+          <label className="field-stack block">
             <span className="field-label">검색</span>
-            <input
-              className="input"
-              placeholder="브랜드, 품목명, 메모로 검색"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-11"
+                placeholder="브랜드, 품목명, 메모로 검색"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
           </label>
 
-          <div className="field-grid">
-            <label className="field">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <label className="field-stack block">
               <span className="field-label">카테고리</span>
-              <select
-                className="input"
+              <Select
                 value={category}
-                onChange={(event) =>
-                  setCategory(
-                    event.target.value as NonNullable<ItemListFilters["category"]>
-                  )
+                onValueChange={(value) =>
+                  setCategory(value as NonNullable<ItemListFilters["category"]>)
                 }
               >
-                <option value="all">전체</option>
-                {ITEM_CATEGORIES.map((entry) => (
-                  <option key={entry} value={entry}>
-                    {getCategoryLabel(entry)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="카테고리 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  {ITEM_CATEGORIES.map((entry) => (
+                    <SelectItem key={entry} value={entry}>
+                      {getCategoryLabel(entry)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
 
-            <label className="field">
+            <label className="field-stack block">
               <span className="field-label">상태</span>
-              <select
-                className="input"
+              <Select
                 value={status}
-                onChange={(event) =>
-                  setStatus(event.target.value as NonNullable<ItemListFilters["status"]>)
+                onValueChange={(value) =>
+                  setStatus(value as NonNullable<ItemListFilters["status"]>)
                 }
               >
-                <option value="all">전체</option>
-                {ITEM_STATUSES.map((entry) => (
-                  <option key={entry} value={entry}>
-                    {getStatusLabel(entry)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="상태 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  {ITEM_STATUSES.map((entry) => (
+                    <SelectItem key={entry} value={entry}>
+                      {getStatusLabel(entry)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
 
-            <label className="field">
+            <label className="field-stack block">
               <span className="field-label">우선 유통기한</span>
-              <select
-                className="input"
+              <Select
                 value={expiry}
-                onChange={(event) =>
-                  setExpiry(event.target.value as NonNullable<ItemListFilters["expiry"]>)
+                onValueChange={(value) =>
+                  setExpiry(value as NonNullable<ItemListFilters["expiry"]>)
                 }
               >
-                <option value="all">{getExpiryFilterLabel("all")}</option>
-                <option value="soon">{getExpiryFilterLabel("soon")}</option>
-                <option value="expired">{getExpiryFilterLabel("expired")}</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="우선 유통기한 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{getExpiryFilterLabel("all")}</SelectItem>
+                  <SelectItem value="soon">{getExpiryFilterLabel("soon")}</SelectItem>
+                  <SelectItem value="expired">{getExpiryFilterLabel("expired")}</SelectItem>
+                </SelectContent>
+              </Select>
             </label>
 
-            <label className="field">
+            <label className="field-stack block">
               <span className="field-label">정렬</span>
-              <select
-                className="input"
+              <Select
                 value={sort}
-                onChange={(event) =>
-                  setSort(event.target.value as NonNullable<ItemListFilters["sort"]>)
+                onValueChange={(value) =>
+                  setSort(value as NonNullable<ItemListFilters["sort"]>)
                 }
               >
-                {ITEM_SORTS.map((entry) => (
-                  <option key={entry} value={entry}>
-                    {getSortLabel(entry)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue placeholder="정렬 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ITEM_SORTS.map((entry) => (
+                    <SelectItem key={entry} value={entry}>
+                      {getSortLabel(entry)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
           </div>
 
-          <label className="toggle">
-            <input
-              checked={restockOnly}
-              onChange={(event) => setRestockOnly(event.target.checked)}
-              type="checkbox"
-            />
-            <span>재구매 필요한 항목만 보기</span>
-          </label>
-        </div>
-      </section>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant={restockOnly ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setRestockOnly((current) => !current)}
+            >
+              재구매 필요한 항목만 보기
+            </Button>
+            {(search || category !== "all" || status !== "all" || expiry !== "all" || restockOnly) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearch("");
+                  setCategory("all");
+                  setStatus("all");
+                  setExpiry("all");
+                  setSort("updated_desc");
+                  setRestockOnly(false);
+                }}
+              >
+                필터 초기화
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {itemsQuery.isPending ? (
-        <div className="panel">보관함을 불러오는 중입니다...</div>
+        <Card>보관함을 불러오는 중입니다...</Card>
       ) : itemsQuery.isError ? (
-        <div className="panel inline-alert" role="alert">
+        <div className="inline-alert" role="alert">
           {getErrorMessage(itemsQuery.error)}
         </div>
       ) : itemsQuery.data.length === 0 ? (
@@ -156,13 +215,17 @@ export function InventoryPage() {
         />
       ) : (
         <>
-          <div className="section-heading">
-            <h2>총 {itemsQuery.data.length}개 품목</h2>
-            <span className="muted-text">
-              한 번 열어본 항목은 오프라인에서도 다시 확인할 수 있어요.
-            </span>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-3xl font-semibold tracking-[-0.04em] text-foreground">
+                총 {itemsQuery.data.length}개 품목
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                한 번 열어본 항목은 오프라인에서도 다시 확인할 수 있어요.
+              </p>
+            </div>
           </div>
-          <div className="inventory-list">
+          <div className="grid gap-4">
             {itemsQuery.data.map((item) => (
               <ItemCard item={item} key={item.id} />
             ))}

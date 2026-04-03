@@ -1,4 +1,13 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import {
+  Archive,
+  Home,
+  LogOut,
+  Plus,
+  Settings,
+  Sparkles
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "../features/auth/AuthProvider";
 import { APP_NAME } from "../shared/labels";
 
@@ -35,53 +44,103 @@ export function AppShell() {
         : location.pathname.startsWith("/items/")
           ? "수량, 기한, 메모를 자세히 확인할 수 있어요."
           : "자주 쓰는 물건과 소모품 재고를 한곳에서 정돈해서 관리하세요.");
+  const navItems = [
+    { to: "/", label: "대시보드", icon: Home },
+    { to: "/inventory", label: "보관함", icon: Archive },
+    { to: "/settings", label: "설정", icon: Settings }
+  ];
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div className="topbar-copy">
-          <p className="eyebrow">{APP_NAME}</p>
-          <h1>{title}</h1>
-          <p className="page-description">{description}</p>
-        </div>
-        <div className="topbar-actions">
-          {location.pathname === "/inventory" && (
-            <Link className="button button--secondary" to="/items/new">
-              항목 추가
-            </Link>
-          )}
-          <button
-            className="button button--ghost"
-            type="button"
-            aria-label="로그아웃"
-            onClick={() => auth.logout()}
-            disabled={auth.logoutPending}
-          >
-            {auth.logoutPending ? "로그아웃 중..." : "로그아웃"}
-          </button>
+    <div className="page-shell">
+      <header className="sticky top-4 z-40">
+        <div className="glass-panel rounded-[2rem] px-5 py-4 sm:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-11 items-center justify-center rounded-full bg-primary-container text-primary">
+                  <Sparkles className="size-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="eyebrow">{APP_NAME}</p>
+                  <p className="text-sm text-muted-foreground">차분한 재고 정리 루틴</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h1 className="text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-[2.75rem]">
+                  {title}
+                </h1>
+                <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-[15px]">
+                  {description}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {location.pathname === "/inventory" && (
+                <Button asChild variant="secondary">
+                  <Link to="/items/new">
+                    <Plus className="size-4" />
+                    항목 추가
+                  </Link>
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                type="button"
+                aria-label="로그아웃"
+                onClick={() => auth.logout()}
+                disabled={auth.logoutPending}
+              >
+                <LogOut className="size-4" />
+                {auth.logoutPending ? "로그아웃 중..." : "로그아웃"}
+              </Button>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="shell-content">
+      <main className="mt-6">
         <Outlet />
       </main>
 
       {location.pathname === "/inventory" && (
-        <Link aria-label="새 항목 추가" className="fab" to="/items/new">
-          +
-        </Link>
+        <Button
+          asChild
+          size="icon"
+          className="fixed bottom-28 right-5 z-40 size-14 shadow-[var(--shadow-soft)] sm:right-8"
+          aria-label="새 항목 추가"
+        >
+          <Link to="/items/new">
+            <Plus className="size-6" />
+          </Link>
+        </Button>
       )}
 
-      <nav className="bottom-nav" aria-label="주요 메뉴">
-        <NavLink className="bottom-nav__link" to="/" end>
-          <span>대시보드</span>
-        </NavLink>
-        <NavLink className="bottom-nav__link" to="/inventory">
-          <span>보관함</span>
-        </NavLink>
-        <NavLink className="bottom-nav__link" to="/settings">
-          <span>설정</span>
-        </NavLink>
+      <nav
+        className="glass-panel fixed bottom-5 left-1/2 z-40 flex w-[min(calc(100%-1rem),44rem)] -translate-x-1/2 items-center justify-between rounded-full p-2"
+        aria-label="주요 메뉴"
+      >
+        {navItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <NavLink
+              key={item.to}
+              className={({ isActive }) =>
+                [
+                  "flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(47,52,48,0.1)]"
+                    : "text-muted-foreground hover:bg-surface-container-low"
+                ].join(" ")
+              }
+              to={item.to}
+              end={item.to === "/"}
+            >
+              <Icon className="size-4" />
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
     </div>
   );

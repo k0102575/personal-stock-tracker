@@ -1,5 +1,16 @@
 import { Link } from "react-router-dom";
-import { formatDate, getInventorySignals, getItemSubtitle, getMinimumLabel, getQuantityLabel } from "../../lib/inventory";
+import { ArrowUpRight } from "lucide-react";
+import { InventorySignals } from "@/components/InventorySignals";
+import { StockMeter } from "@/components/StockMeter";
+import {
+  formatDate,
+  getInventorySignals,
+  getItemInitials,
+  getItemSubtitle,
+  getMinimumLabel,
+  getQuantityLabel,
+  getStockMeterValue
+} from "../../lib/inventory";
 import { getCategoryLabel, getStatusLabel } from "../../shared/labels";
 import type { InventoryItem } from "../../shared/types";
 
@@ -7,40 +18,62 @@ export function ItemCard({ item }: { item: InventoryItem }) {
   const signals = getInventorySignals(item);
 
   return (
-    <Link className="item-card" to={`/items/${item.id}`}>
-      <div className="item-card__top">
-        <div>
-          <p className="eyebrow">{getCategoryLabel(item.category)}</p>
-          <h2>{item.name}</h2>
-          <p className="muted-text">{getItemSubtitle(item)}</p>
+    <Link
+      className="group block rounded-[1.75rem] bg-surface-container-lowest px-5 py-5 shadow-[0_14px_36px_rgba(47,52,48,0.04)] transition-transform duration-200 hover:-translate-y-0.5"
+      to={`/items/${item.id}`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="flex size-14 shrink-0 items-center justify-center rounded-[1.35rem] bg-primary-container/75 font-serif text-lg font-semibold text-primary">
+            {getItemInitials(item)}
+          </div>
+          <div className="space-y-1.5">
+            <p className="eyebrow">{getCategoryLabel(item.category)}</p>
+            <h2 className="text-xl font-semibold text-foreground">{item.name}</h2>
+            <p className="text-sm text-muted-foreground">{getItemSubtitle(item)}</p>
+          </div>
         </div>
-        <span className="status-pill">{getStatusLabel(item.status)}</span>
+        <div className="space-y-3 text-right">
+          <span className="inline-flex rounded-full bg-surface-container px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">
+            {getStatusLabel(item.status)}
+          </span>
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
+            열기
+            <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </span>
+        </div>
       </div>
 
-      <div className="badge-row">
-        {signals.lowStock && <span className="badge badge--warning">재고 부족</span>}
-        {signals.expired && <span className="badge badge--danger">우선 유통기한 경과</span>}
-        {!signals.expired && signals.expiringSoon && (
-          <span className="badge badge--neutral">우선 유통기한 임박</span>
-        )}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <InventorySignals {...signals} />
+        <div className="space-y-1">
+          <StockMeter
+            activeCount={getStockMeterValue(item)}
+            tone={signals.expired ? "danger" : signals.lowStock ? "warning" : "primary"}
+            className="justify-end"
+          />
+          <p className="text-right text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            재고 결
+          </p>
+        </div>
       </div>
 
-      <dl className="meta-grid">
-        <div>
-          <dt>현재 수량</dt>
-          <dd>{getQuantityLabel(item)}</dd>
+      <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-[1.25rem] bg-surface-container-low px-4 py-3">
+          <dt className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">현재 수량</dt>
+          <dd className="mt-1 text-lg font-semibold text-foreground">{getQuantityLabel(item)}</dd>
         </div>
-        <div>
-          <dt>기준 수량</dt>
-          <dd>{getMinimumLabel(item)}</dd>
+        <div className="rounded-[1.25rem] bg-surface-container-low px-4 py-3">
+          <dt className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">기준 수량</dt>
+          <dd className="mt-1 text-lg font-semibold text-foreground">{getMinimumLabel(item)}</dd>
         </div>
-        <div>
-          <dt>우선 유통기한</dt>
-          <dd>{formatDate(item.expiryDate)}</dd>
+        <div className="rounded-[1.25rem] bg-surface-container-low px-4 py-3">
+          <dt className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">우선 유통기한</dt>
+          <dd className="mt-1 text-sm font-semibold text-foreground">{formatDate(item.expiryDate)}</dd>
         </div>
-        <div>
-          <dt>수정일</dt>
-          <dd>{formatDate(item.updatedAt)}</dd>
+        <div className="rounded-[1.25rem] bg-surface-container-low px-4 py-3">
+          <dt className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">수정일</dt>
+          <dd className="mt-1 text-sm font-semibold text-foreground">{formatDate(item.updatedAt)}</dd>
         </div>
       </dl>
     </Link>

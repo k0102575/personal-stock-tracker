@@ -5,8 +5,21 @@ import {
 } from "@tanstack/react-query";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { CalendarDays, PackagePlus, Save, Undo2 } from "lucide-react";
+import { StockMeter } from "@/components/StockMeter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { api, getErrorMessage } from "../../lib/api";
-import { toFormDefaults } from "../../lib/inventory";
+import { getStockMeterValue, toFormDefaults } from "../../lib/inventory";
 import { ITEM_CATEGORIES, ITEM_STATUSES } from "../../shared/constants";
 import {
   getCategoryLabel,
@@ -63,12 +76,12 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
   });
 
   if (mode === "edit" && itemQuery.isPending) {
-    return <div className="panel">품목 정보를 불러오는 중입니다...</div>;
+    return <Card>품목 정보를 불러오는 중입니다...</Card>;
   }
 
   if (mode === "edit" && itemQuery.isError) {
     return (
-      <div className="panel inline-alert" role="alert">
+      <div className="inline-alert" role="alert">
         {getErrorMessage(itemQuery.error)}
       </div>
     );
@@ -116,142 +129,252 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
   }
 
   return (
-    <form className="stack-lg" onSubmit={handleSubmit}>
-      <section className="panel stack-md">
-        <div className="section-heading">
-          <h2>{mode === "create" ? "항목 추가" : "항목 수정"}</h2>
+    <form className="space-y-6" onSubmit={handleSubmit}>
+      <Card className="bg-surface-container-lowest">
+        <CardHeader className="flex-row flex-wrap items-end justify-between gap-4">
+          <div className="space-y-2">
+            <p className="eyebrow">{mode === "create" ? "새 기록 시작" : "기존 기록 정리"}</p>
+            <CardTitle>{mode === "create" ? "항목 추가" : "항목 수정"}</CardTitle>
+            <CardDescription>
+              품목의 성격, 수량, 일정, 메모를 부드럽게 한 화면에서 정리할 수 있습니다.
+            </CardDescription>
+          </div>
           {mode === "edit" ? (
-            <Link className="text-link" to={`/items/${id}`}>
-              취소
-            </Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link to={`/items/${id}`}>취소</Link>
+            </Button>
           ) : null}
+        </CardHeader>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">기본 정보</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <label className="field-stack block">
+                <span className="field-label">카테고리</span>
+                <Select
+                  value={form.category}
+                  onValueChange={(value) =>
+                    updateField("category", value as InventoryItemInput["category"])
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="카테고리 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEM_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {getCategoryLabel(category)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+
+              <label className="field-stack block">
+                <span className="field-label">상태</span>
+                <Select
+                  value={form.status}
+                  onValueChange={(value) =>
+                    updateField("status", value as InventoryItemInput["status"])
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="상태 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEM_STATUSES.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {getStatusLabel(status)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="field-hint">{getStatusDescription(form.status)}</span>
+              </label>
+
+              <label className="field-stack block md:col-span-2">
+                <span className="field-label">품목명</span>
+                <Input
+                  value={form.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                  placeholder="시카 크림, 핸드크림, 향수처럼 입력해보세요"
+                />
+              </label>
+
+              <label className="field-stack block">
+                <span className="field-label">브랜드</span>
+                <Input
+                  value={form.brand}
+                  onChange={(event) => updateField("brand", event.target.value)}
+                  placeholder="예: 라로슈포제"
+                />
+              </label>
+
+              <label className="field-stack block">
+                <span className="field-label">용량 / 단위</span>
+                <Input
+                  value={form.volumeOrUnit}
+                  onChange={(event) => updateField("volumeOrUnit", event.target.value)}
+                  placeholder="예: 50ml / 1개"
+                />
+              </label>
+
+              <label className="field-stack block md:col-span-2">
+                <span className="field-label">구매처</span>
+                <Input
+                  value={form.purchaseSource}
+                  onChange={(event) => updateField("purchaseSource", event.target.value)}
+                  placeholder="예: 올리브영, 백화점, 온라인몰"
+                />
+              </label>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">수량과 일정</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <label className="field-stack block">
+                <span className="field-label">현재 수량</span>
+                <Input
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  type="number"
+                  value={form.currentQuantity}
+                  onChange={handleNumberChange("currentQuantity")}
+                />
+                {form.currentQuantity === 0 && form.status !== "used_up" && (
+                  <span className="field-hint">
+                    수량이 0이면 저장 시 상태가 `사용 완료`로 반영됩니다.
+                  </span>
+                )}
+              </label>
+
+              <label className="field-stack block">
+                <span className="field-label">기준 수량</span>
+                <Input
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  type="number"
+                  value={form.minimumQuantity}
+                  onChange={handleNumberChange("minimumQuantity")}
+                />
+              </label>
+
+              <label className="field-stack block">
+                <span className="field-label">구매일</span>
+                <Input
+                  type="date"
+                  value={form.purchaseDate ?? ""}
+                  onChange={(event) => updateField("purchaseDate", event.target.value || null)}
+                />
+              </label>
+
+              <label className="field-stack block">
+                <span className="field-label">개봉일</span>
+                <Input
+                  type="date"
+                  value={form.openedDate ?? ""}
+                  onChange={(event) => updateField("openedDate", event.target.value || null)}
+                />
+              </label>
+
+              <label className="field-stack block md:col-span-2">
+                <span className="field-label">우선 유통기한</span>
+                <Input
+                  type="date"
+                  value={form.expiryDate ?? ""}
+                  onChange={(event) => updateField("expiryDate", event.target.value || null)}
+                />
+              </label>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">메모</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <label className="field-stack block">
+                <span className="field-label">기록 메모</span>
+                <Textarea
+                  rows={6}
+                  value={form.memo}
+                  onChange={(event) => updateField("memo", event.target.value)}
+                  placeholder="피부 반응, 계절별 사용감, 보관 위치 등을 기록해보세요"
+                />
+              </label>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="field-grid">
-          <label className="field">
-            <span className="field-label">카테고리</span>
-            <select
-              className="input"
-              value={form.category}
-              onChange={(event) => updateField("category", event.target.value as InventoryItemInput["category"])}
-            >
-              {ITEM_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {getCategoryLabel(category)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="field">
-            <span className="field-label">상태</span>
-            <select
-              className="input"
-              value={form.status}
-              onChange={(event) => updateField("status", event.target.value as InventoryItemInput["status"])}
-            >
-              {ITEM_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {getStatusLabel(status)}
-                </option>
-              ))}
-            </select>
-            <span className="field-hint">{getStatusDescription(form.status)}</span>
-          </label>
-
-          <label className="field field--full">
-            <span className="field-label">품목명</span>
-            <input
-              className="input"
-              value={form.name}
-              onChange={(event) => updateField("name", event.target.value)}
-              placeholder="시카 크림, 핸드크림, 향수처럼 입력해보세요"
-            />
-          </label>
-
-          <label className="field">
-            <span className="field-label">브랜드</span>
-            <input
-              className="input"
-              value={form.brand}
-              onChange={(event) => updateField("brand", event.target.value)}
-              placeholder="예: 라로슈포제"
-            />
-          </label>
-
-          <label className="field">
-            <span className="field-label">용량 / 단위</span>
-            <input
-              className="input"
-              value={form.volumeOrUnit}
-              onChange={(event) => updateField("volumeOrUnit", event.target.value)}
-              placeholder="예: 50ml / 1개"
-            />
-          </label>
-
-          <label className="field">
-            <span className="field-label">현재 수량</span>
-            <input
-              className="input"
-              inputMode="numeric"
-              min="0"
-              step="1"
-              type="number"
-              value={form.currentQuantity}
-              onChange={handleNumberChange("currentQuantity")}
-            />
-            {form.currentQuantity === 0 && form.status !== "used_up" && (
-              <span className="field-hint">수량이 0이면 저장 시 상태가 `사용 완료`로 반영됩니다.</span>
-            )}
-          </label>
-
-          <label className="field">
-            <span className="field-label">기준 수량</span>
-            <input
-              className="input"
-              inputMode="numeric"
-              min="0"
-              step="1"
-              type="number"
-              value={form.minimumQuantity}
-              onChange={handleNumberChange("minimumQuantity")}
-            />
-          </label>
-
-          <label className="field field--full">
-            <span className="field-label">우선 유통기한</span>
-            <input
-              className="input"
-              type="date"
-              value={form.expiryDate ?? ""}
-              onChange={(event) => updateField("expiryDate", event.target.value || null)}
-            />
-          </label>
-
-          <label className="field field--full">
-            <span className="field-label">메모</span>
-            <textarea
-              className="input textarea"
-              rows={5}
-              value={form.memo}
-              onChange={(event) => updateField("memo", event.target.value)}
-              placeholder="피부 반응, 계절별 사용감, 보관 위치 등을 기록해보세요"
-            />
-          </label>
+        <div className="space-y-6">
+          <Card className="bg-surface-container-lowest">
+            <CardHeader className="flex-row items-start gap-3">
+              <PackagePlus className="mt-1 size-5 text-primary" />
+              <div>
+                <CardTitle className="text-2xl">현재 재고 감도</CardTitle>
+                <CardDescription>입력값에 맞춰 재고의 여유를 바로 확인할 수 있어요.</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-5">
+                <div className="flex items-end justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="eyebrow">현재 기준</p>
+                    <p className="text-3xl font-semibold text-foreground">
+                      {form.currentQuantity} / {form.minimumQuantity}
+                    </p>
+                  </div>
+                  <StockMeter
+                    activeCount={getStockMeterValue({
+                      currentQuantity: form.currentQuantity,
+                      minimumQuantity: form.minimumQuantity
+                    })}
+                    tone={form.currentQuantity === 0 ? "danger" : "primary"}
+                  />
+                </div>
+              </div>
+              <div className="rounded-[1.5rem] bg-tertiary-container/70 px-5 py-4">
+                <div className="flex items-start gap-3">
+                  <CalendarDays className="mt-1 size-5 text-tertiary" />
+                  <div className="space-y-1">
+                    <p className="eyebrow text-tertiary/70">우선 유통기한 흐름</p>
+                    <p className="text-sm leading-6 text-tertiary/80">
+                      입력한 날짜를 기준으로 상세 화면과 대시보드에서 자연스럽게 신호가
+                      반영됩니다.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </section>
+      </div>
 
       {(validationError || mutation.error) && (
-        <div className="panel inline-alert" role="alert">
+        <div className="inline-alert" role="alert">
           {validationError || getErrorMessage(mutation.error)}
         </div>
       )}
 
-      <div className="sticky-action-bar">
-        <Link className="button button--ghost" to={mode === "edit" ? `/items/${id}` : "/inventory"}>
-          취소
-        </Link>
-        <button className="button button--primary" disabled={mutation.isPending} type="submit">
+      <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[1.75rem] bg-[rgba(250,249,246,0.88)] px-4 py-4 backdrop-blur-xl shadow-[var(--shadow-ambient)]">
+        <Button asChild variant="ghost">
+          <Link to={mode === "edit" ? `/items/${id}` : "/inventory"}>
+            <Undo2 className="size-4" />
+            취소
+          </Link>
+        </Button>
+        <Button disabled={mutation.isPending} type="submit">
+          <Save className="size-4" />
           {mutation.isPending
             ? mode === "create"
               ? "저장 중..."
@@ -259,7 +382,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
             : mode === "create"
               ? "항목 저장"
               : "수정 내용 저장"}
-        </button>
+        </Button>
       </div>
     </form>
   );

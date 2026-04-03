@@ -4,8 +4,21 @@ import {
   useQueryClient
 } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { CalendarClock, NotebookPen, PencilLine, Trash2 } from "lucide-react";
+import { InventorySignals } from "@/components/InventorySignals";
+import { StockMeter } from "@/components/StockMeter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api, getErrorMessage } from "../../lib/api";
-import { formatDate, getInventorySignals, getItemSubtitle, getMinimumLabel, getQuantityLabel } from "../../lib/inventory";
+import {
+  formatDate,
+  getDaysUntil,
+  getInventorySignals,
+  getItemSubtitle,
+  getMinimumLabel,
+  getQuantityLabel,
+  getStockMeterValue
+} from "../../lib/inventory";
 import { getCategoryLabel, getStatusLabel } from "../../shared/labels";
 
 export function ItemDetailPage() {
@@ -30,12 +43,12 @@ export function ItemDetailPage() {
   });
 
   if (itemQuery.isPending) {
-    return <div className="panel">품목 정보를 불러오는 중입니다...</div>;
+    return <Card>품목 정보를 불러오는 중입니다...</Card>;
   }
 
   if (itemQuery.isError) {
     return (
-      <div className="panel inline-alert" role="alert">
+      <div className="inline-alert" role="alert">
         {getErrorMessage(itemQuery.error)}
       </div>
     );
@@ -43,62 +56,111 @@ export function ItemDetailPage() {
 
   const item = itemQuery.data;
   const signals = getInventorySignals(item);
+  const daysUntilExpiry = getDaysUntil(item.expiryDate);
 
   return (
-    <div className="stack-lg">
-      <section className="detail-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">{getCategoryLabel(item.category)}</p>
-            <h2>{item.name}</h2>
-            <p className="muted-text">{getItemSubtitle(item)}</p>
+    <div className="space-y-6">
+      <Card className="bg-surface-container-lowest">
+        <CardContent className="space-y-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3">
+              <p className="eyebrow">{getCategoryLabel(item.category)}</p>
+              <h2 className="max-w-3xl text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
+                {item.name}
+              </h2>
+              <p className="text-base text-muted-foreground">{getItemSubtitle(item)}</p>
+              <InventorySignals {...signals} />
+            </div>
+            <span className="inline-flex w-fit rounded-full bg-surface-container px-4 py-2 text-sm font-semibold text-muted-foreground">
+              {getStatusLabel(item.status)}
+            </span>
           </div>
-          <span className="status-pill">{getStatusLabel(item.status)}</span>
-        </div>
 
-        <div className="badge-row">
-          {signals.lowStock && <span className="badge badge--warning">재고 부족</span>}
-          {signals.expired && <span className="badge badge--danger">우선 유통기한 경과</span>}
-          {!signals.expired && signals.expiringSoon && (
-            <span className="badge badge--neutral">우선 유통기한 임박</span>
-          )}
-        </div>
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="rounded-[1.75rem] bg-surface-container-low px-5 py-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <p className="eyebrow">현재 재고 감도</p>
+                  <h3 className="text-2xl font-semibold">
+                    현재 수량 {getQuantityLabel(item)} / 기준 수량 {getMinimumLabel(item)}
+                  </h3>
+                </div>
+                <StockMeter
+                  activeCount={getStockMeterValue(item)}
+                  tone={signals.expired ? "danger" : signals.lowStock ? "warning" : "primary"}
+                />
+              </div>
+            </div>
 
-        <dl className="meta-grid">
-          <div>
-            <dt>현재 수량</dt>
-            <dd>{getQuantityLabel(item)}</dd>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="rounded-[1.5rem] bg-tertiary-container/70 px-5 py-4">
+                <div className="flex items-start gap-3">
+                  <CalendarClock className="mt-0.5 size-5 text-tertiary" />
+                  <div className="space-y-1">
+                    <p className="eyebrow text-tertiary/70">우선 유통기한</p>
+                    <p className="text-lg font-semibold text-tertiary">{formatDate(item.expiryDate)}</p>
+                    <p className="text-sm text-tertiary/80">
+                      {daysUntilExpiry === null
+                        ? "기한 정보가 없습니다."
+                        : daysUntilExpiry < 0
+                          ? `${Math.abs(daysUntilExpiry)}일 지났습니다.`
+                          : `${daysUntilExpiry}일 남았습니다.`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+                <div className="space-y-1">
+                  <p className="eyebrow">수정일</p>
+                  <p className="text-lg font-semibold text-foreground">{formatDate(item.updatedAt)}</p>
+                  <p className="text-sm text-muted-foreground">생성일 {formatDate(item.createdAt)}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <dt>기준 수량</dt>
-            <dd>{getMinimumLabel(item)}</dd>
-          </div>
-          <div>
-            <dt>우선 유통기한</dt>
-            <dd>{formatDate(item.expiryDate)}</dd>
-          </div>
-          <div>
-            <dt>생성일</dt>
-            <dd>{formatDate(item.createdAt)}</dd>
-          </div>
-          <div>
-            <dt>수정일</dt>
-            <dd>{formatDate(item.updatedAt)}</dd>
-          </div>
-        </dl>
 
-        <div className="stack-sm">
-          <h3>메모</h3>
-          <p className="note-box">{item.memo || "저장된 메모가 없습니다."}</p>
-        </div>
-      </section>
+          <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <dt className="eyebrow">현재 수량</dt>
+              <dd className="mt-2 text-2xl font-semibold">{getQuantityLabel(item)}</dd>
+            </div>
+            <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <dt className="eyebrow">기준 수량</dt>
+              <dd className="mt-2 text-2xl font-semibold">{getMinimumLabel(item)}</dd>
+            </div>
+            <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <dt className="eyebrow">우선 유통기한</dt>
+              <dd className="mt-2 text-base font-semibold">{formatDate(item.expiryDate)}</dd>
+            </div>
+            <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <dt className="eyebrow">생성일</dt>
+              <dd className="mt-2 text-base font-semibold">{formatDate(item.createdAt)}</dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
 
-      <div className="sticky-action-bar">
-        <Link className="button button--secondary" to={`/items/${item.id}/edit`}>
-          수정
-        </Link>
-        <button
-          className="button button--danger"
+      <Card className="bg-surface-container-low">
+        <CardHeader className="flex-row items-center gap-3">
+          <NotebookPen className="size-5 text-primary" />
+          <CardTitle className="text-2xl">메모</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="rounded-[1.5rem] bg-surface-container-lowest px-5 py-5 text-sm leading-7 text-muted-foreground">
+            {item.memo || "저장된 메모가 없습니다."}
+          </p>
+        </CardContent>
+      </Card>
+
+      <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[1.75rem] bg-[rgba(250,249,246,0.88)] px-4 py-4 backdrop-blur-xl shadow-[var(--shadow-ambient)]">
+        <Button asChild variant="secondary">
+          <Link to={`/items/${item.id}/edit`}>
+            <PencilLine className="size-4" />
+            수정
+          </Link>
+        </Button>
+        <Button
+          variant="destructive"
           disabled={deleteMutation.isPending}
           onClick={() => {
             if (window.confirm(`"${item.name}" 항목을 보관함에서 삭제할까요?`)) {
@@ -107,12 +169,13 @@ export function ItemDetailPage() {
           }}
           type="button"
         >
+          <Trash2 className="size-4" />
           {deleteMutation.isPending ? "삭제 중..." : "삭제"}
-        </button>
+        </Button>
       </div>
 
       {deleteMutation.isError && (
-        <div className="panel inline-alert" role="alert">
+        <div className="inline-alert" role="alert">
           {getErrorMessage(deleteMutation.error)}
         </div>
       )}
