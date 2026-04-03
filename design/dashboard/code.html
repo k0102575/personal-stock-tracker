@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#f4f4f0",
+                    "primary": "#586249",
+                    "on-primary": "#f1fcdc",
+                    "on-error-container": "#742410",
+                    "surface-variant": "#e0e4de",
+                    "on-secondary-container": "#595049",
+                    "on-surface-variant": "#5c605c",
+                    "on-primary-container": "#4b553d",
+                    "surface-bright": "#faf9f6",
+                    "outline-variant": "#afb3ae",
+                    "tertiary-dim": "#5d5140",
+                    "tertiary-fixed": "#feebd4",
+                    "on-tertiary-fixed-variant": "#6e614f",
+                    "outline": "#777c77",
+                    "on-tertiary-fixed": "#504534",
+                    "background": "#faf9f6",
+                    "secondary-dim": "#5a524a",
+                    "tertiary": "#6a5d4b",
+                    "secondary-container": "#ede0d6",
+                    "surface-container-high": "#e6e9e4",
+                    "on-surface": "#2f3430",
+                    "tertiary-fixed-dim": "#efddc6",
+                    "primary-fixed": "#dce7c8",
+                    "on-background": "#2f3430",
+                    "surface-container-highest": "#e0e4de",
+                    "secondary-fixed-dim": "#dfd2c8",
+                    "on-secondary-fixed-variant": "#635a52",
+                    "on-primary-fixed": "#39422c",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#fff8f2",
+                    "on-secondary": "#fff7f3",
+                    "on-primary-fixed-variant": "#555f47",
+                    "inverse-surface": "#0d0f0d",
+                    "on-tertiary-container": "#635745",
+                    "on-error": "#fff7f6",
+                    "primary-dim": "#4c563e",
+                    "inverse-primary": "#f3fede",
+                    "error-dim": "#5c1202",
+                    "primary-fixed-dim": "#ced8ba",
+                    "inverse-on-surface": "#9d9d9a",
+                    "surface": "#faf9f6",
+                    "tertiary-container": "#feebd4",
+                    "secondary": "#665d56",
+                    "surface-tint": "#586249",
+                    "surface-container": "#edeeea",
+                    "error-container": "#fe8b70",
+                    "primary-container": "#dce7c8",
+                    "on-secondary-fixed": "#463e37",
+                    "secondary-fixed": "#ede0d6",
+                    "error": "#9e422c",
+                    "surface-dim": "#d6dbd5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Noto Serif"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .serif { font-family: 'Noto Serif', serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#faf9f6]/80 backdrop-blur-md shadow-[0px_4px_24px_rgba(47,52,48,0.04)]">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-md mx-auto relative">
+<button class="active:scale-95 transition-transform duration-200 text-[#586249] flex items-center">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-['Noto_Serif'] text-xl font-semibold text-[#586249]">Vanity Stock</h1>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden border border-surface-container-high">
+<span class="text-[10px] font-bold text-on-primary-fixed">VS</span>
+</div>
+<div class="bg-[#f4f4f0] h-[1px] w-full absolute bottom-0 left-0"></div>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-md mx-auto space-y-8">
+<!-- Welcome Header -->
+<section class="space-y-1">
+<h2 class="serif text-3xl font-medium tracking-tight text-on-surface">Shelf Overview</h2>
+<p class="text-on-surface-variant text-sm font-label tracking-wide uppercase opacity-70">The Ritual of Care • Today</p>
+</section>
+<!-- Bento Grid: Key Metrics -->
+<section class="grid grid-cols-2 gap-4">
+<div class="col-span-2 bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between h-40 shadow-sm">
+<div class="flex justify-between items-start">
+<span class="font-label text-xs tracking-widest uppercase text-on-surface-variant">Total Items</span>
+<span class="material-symbols-outlined text-primary-dim opacity-40" data-icon="shelves">shelves</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="serif text-5xl font-semibold text-primary">42</span>
+<span class="font-label text-xs text-outline italic">Curated Essentials</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col justify-between h-32">
+<span class="font-label text-[10px] tracking-widest uppercase text-on-surface-variant">Low Stock</span>
+<span class="serif text-3xl text-on-surface">03</span>
+</div>
+<div class="bg-tertiary-container p-4 rounded-xl flex flex-col justify-between h-32">
+<span class="font-label text-[10px] tracking-widest uppercase text-on-tertiary-container">Expiring Soon</span>
+<span class="serif text-3xl text-on-tertiary-container">02</span>
+</div>
+<div class="col-span-2 bg-error-container/20 p-5 rounded-xl flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-error-container text-xl" data-icon="history_toggle_off">history_toggle_off</span>
+</div>
+<div>
+<p class="font-label text-xs tracking-widest uppercase text-on-error-container/70">Expired</p>
+<p class="serif text-lg font-medium text-on-error-container">01 Item Needs Attention</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-error-container/40" data-icon="chevron_right">chevron_right</span>
+</div>
+</section>
+<!-- Recent Additions (Text-based cards) -->
+<section class="space-y-4">
+<div class="flex justify-between items-end">
+<h3 class="serif text-xl font-medium">Recent Additions</h3>
+<button class="text-xs font-label uppercase tracking-widest text-primary border-b border-primary/20 pb-0.5">View All</button>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl shadow-[0px_8px_24px_rgba(47,52,48,0.02)]">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center serif text-lg text-primary/60 font-semibold">CC</div>
+<div>
+<h4 class="font-medium text-on-surface">Cleansing Complex</h4>
+<p class="text-xs text-on-surface-variant font-label tracking-tight">Skincare • Added 2d ago</p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<div class="flex gap-0.5">
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-outline-variant/30 rounded-full"></div>
+<div class="w-1 h-3 bg-outline-variant/30 rounded-full"></div>
+</div>
+<span class="text-[9px] font-label uppercase tracking-tighter opacity-50">Stock Meter</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl shadow-[0px_8px_24px_rgba(47,52,48,0.02)]">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-secondary-container/50 flex items-center justify-center serif text-lg text-secondary-dim font-semibold">BM</div>
+<div>
+<h4 class="font-medium text-on-surface">Bal d'Afrique</h4>
+<p class="text-xs text-on-surface-variant font-label tracking-tight">Fragrance • Added 5d ago</p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<div class="flex gap-0.5">
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+</div>
+<span class="text-[9px] font-label uppercase tracking-tighter opacity-50">Stock Meter</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Categories Overview -->
+<section class="space-y-4">
+<h3 class="serif text-xl font-medium">Categories</h3>
+<div class="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
+<div class="flex-shrink-0 w-32 bg-surface-container-low p-4 rounded-2xl flex flex-col items-center gap-2 group cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl" data-icon="spa">spa</span>
+</div>
+<span class="font-label text-xs font-semibold tracking-wide uppercase text-on-surface">Skincare</span>
+<span class="text-[10px] text-outline italic">24 items</span>
+</div>
+<div class="flex-shrink-0 w-32 bg-surface-container-low p-4 rounded-2xl flex flex-col items-center gap-2 group cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl" data-icon="flare">flare</span>
+</div>
+<span class="font-label text-xs font-semibold tracking-wide uppercase text-on-surface">Fragrance</span>
+<span class="text-[10px] text-outline italic">8 items</span>
+</div>
+<div class="flex-shrink-0 w-32 bg-surface-container-low p-4 rounded-2xl flex flex-col items-center gap-2 group cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl" data-icon="self_care">self_care</span>
+</div>
+<span class="font-label text-xs font-semibold tracking-wide uppercase text-on-surface">Wellness</span>
+<span class="text-[10px] text-outline italic">10 items</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-2xl bg-[#faf9f6]/80 backdrop-blur-md shadow-[0px_-8px_24px_rgba(47,52,48,0.04)]">
+<div class="bg-[#f4f4f0] h-[1px] w-full absolute top-0 left-0"></div>
+<div class="flex justify-around items-center px-4 pb-8 pt-3 h-20 w-full max-w-md mx-auto left-0 right-0">
+<!-- Shelf Tab (Active) -->
+<a class="flex flex-col items-center justify-center text-[#586249] scale-110 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="shelves" style="font-variation-settings: 'FILL' 1;">shelves</span>
+<span class="font-['Manrope'] text-[10px] font-medium tracking-[0.02em] uppercase">Shelf</span>
+</a>
+<!-- Routine Tab -->
+<a class="flex flex-col items-center justify-center text-[#afb3ae] hover:text-[#586249] transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-['Manrope'] text-[10px] font-medium tracking-[0.02em] uppercase">Routine</span>
+</a>
+<!-- Expiring Tab -->
+<a class="flex flex-col items-center justify-center text-[#afb3ae] hover:text-[#586249] transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="history_toggle_off">history_toggle_off</span>
+<span class="font-['Manrope'] text-[10px] font-medium tracking-[0.02em] uppercase">Expiring</span>
+</a>
+<!-- Settings Tab -->
+<a class="flex flex-col items-center justify-center text-[#afb3ae] hover:text-[#586249] transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span class="font-['Manrope'] text-[10px] font-medium tracking-[0.02em] uppercase">Settings</span>
+</a>
+</div>
+</nav>
+<!-- Floating Action Button -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all duration-300 z-40">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</body></html>
