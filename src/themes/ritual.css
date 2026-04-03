@@ -1,0 +1,47 @@
+:root,
+.theme-ritual {
+  color-scheme: light;
+  --font-body:
+    "Manrope",
+    "SUIT Variable",
+    "Pretendard Variable",
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    sans-serif;
+  --font-display:
+    "Noto Serif",
+    "Iowan Old Style",
+    "Apple SD Gothic Neo",
+    serif;
+  --background: #faf9f6;
+  --foreground: #2f3430;
+  --muted-foreground: #5c605c;
+  --background-glow: rgba(220, 231, 200, 0.58);
+  --surface: #faf9f6;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f4f4f0;
+  --surface-container: #edeeea;
+  --surface-container-high: #e6e9e4;
+  --surface-container-highest: #e0e4de;
+  --surface-bright: #faf9f6;
+  --surface-glass: rgba(250, 249, 246, 0.8);
+  --primary: #586249;
+  --primary-dim: #4c563e;
+  --primary-foreground: #f1fcdc;
+  --primary-container: #dce7c8;
+  --secondary: #665d56;
+  --secondary-container: #ede0d6;
+  --tertiary: #6a5d4b;
+  --tertiary-container: #feebd4;
+  --error: #9e422c;
+  --error-dim: #742410;
+  --error-container: #fe8b70;
+  --outline: #777c77;
+  --outline-variant: #afb3ae;
+  --ring: rgba(88, 98, 73, 0.18);
+  --radius: 1.5rem;
+  --radius-lg: 2rem;
+  --radius-pill: 9999px;
+  --shadow-ambient: 0 12px 32px rgba(47, 52, 48, 0.06);
+  --shadow-soft: 0 20px 50px rgba(47, 52, 48, 0.05);
+}

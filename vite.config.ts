@@ -1,4 +1,6 @@
+import { fileURLToPath, URL } from "node:url";
 import { existsSync } from "node:fs";
+import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -10,6 +12,7 @@ const workerConfigPath = existsSync("wrangler.jsonc")
 
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     react(),
     cloudflare({
       configPath: workerConfigPath
@@ -84,6 +87,11 @@ export default defineConfig({
       }
     })
   ],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url))
+    }
+  },
   server: {
     port: 5173
   }
