@@ -40,15 +40,17 @@
   body,
   #root {
     min-height: 100%;
+    background-color: var(--background);
+  }
+
+  html {
+    font-size: 15px;
   }
 
   body {
     margin: 0;
     min-width: 320px;
-    background:
-      radial-gradient(circle at top left, var(--background-glow), transparent 32%),
-      radial-gradient(circle at right 10% bottom 0%, rgba(237, 224, 214, 0.72), transparent 28%),
-      linear-gradient(180deg, var(--background) 0%, #f7f4ef 100%);
+    background: var(--background);
     color: var(--foreground);
     font-family: var(--font-body);
     font-synthesis: none;
@@ -99,7 +101,7 @@
 
 @layer components {
   .page-shell {
-    @apply relative mx-auto min-h-screen w-full max-w-6xl px-4 pb-32 pt-6 sm:px-6 lg:px-8;
+    @apply relative mx-auto min-h-screen w-full max-w-6xl px-3 pb-28 pt-4 sm:px-6 sm:pb-32 sm:pt-6 lg:px-8;
   }
 
   .page-shell::before {
@@ -107,14 +109,12 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background:
-      radial-gradient(circle at 15% 5%, rgba(220, 231, 200, 0.42), transparent 18%),
-      radial-gradient(circle at 100% 20%, rgba(254, 235, 212, 0.38), transparent 20%);
+    background: transparent;
     pointer-events: none;
   }
 
   .glass-panel {
-    @apply bg-[color:var(--surface-glass)] backdrop-blur-2xl shadow-[var(--shadow-ambient)];
+    @apply bg-background shadow-none;
   }
 
   .eyebrow {

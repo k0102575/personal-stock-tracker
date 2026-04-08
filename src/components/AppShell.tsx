@@ -8,6 +8,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useAuth } from "../features/auth/AuthProvider";
 import { APP_NAME } from "../shared/labels";
 
@@ -49,32 +50,46 @@ export function AppShell() {
     { to: "/inventory", label: "보관함", icon: Archive },
     { to: "/settings", label: "설정", icon: Settings }
   ];
+  const isItemEditorRoute =
+    location.pathname === "/items/new" || location.pathname.endsWith("/edit");
 
   return (
     <div className="page-shell">
-      <header className="sticky top-4 z-40">
-        <div className="glass-panel rounded-[2rem] px-5 py-4 sm:px-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="flex size-11 items-center justify-center rounded-full bg-primary-container text-primary">
+      <header className="sticky top-3 z-40 sm:top-4">
+        <div className="glass-panel rounded-[1.5rem] px-4 py-3 sm:rounded-[2rem] sm:px-6 sm:py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="space-y-2 sm:space-y-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="flex size-10 items-center justify-center rounded-full bg-primary-container text-primary sm:size-11">
                   <Sparkles className="size-5" />
                 </div>
                 <div className="space-y-1">
                   <p className="eyebrow">{APP_NAME}</p>
-                  <p className="text-sm text-muted-foreground">차분한 재고 정리 루틴</p>
+                  <p className={cn("text-[13px] text-muted-foreground", isItemEditorRoute && "hidden sm:block")}>
+                    차분한 재고 정리 루틴
+                  </p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <h1 className="text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-[2.75rem]">
+              <div className="space-y-1.5 sm:space-y-2">
+                <h1
+                  className={cn(
+                    "font-semibold tracking-[-0.05em] text-foreground",
+                    isItemEditorRoute ? "text-[1.75rem] sm:text-[2.3rem]" : "text-[1.95rem] sm:text-[2.45rem]"
+                  )}
+                >
                   {title}
                 </h1>
-                <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-[15px]">
+                <p
+                  className={cn(
+                    "max-w-2xl text-[13px] leading-5 text-muted-foreground sm:text-sm sm:leading-6",
+                    isItemEditorRoute && "hidden sm:block"
+                  )}
+                >
                   {description}
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2 self-end sm:self-auto">
               {location.pathname === "/inventory" && (
                 <Button asChild variant="secondary">
                   <Link to="/items/new">
@@ -98,7 +113,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mt-6">
+      <main className="mt-4 rounded-[1.75rem] bg-surface-container-low px-3 py-3 sm:mt-6 sm:rounded-[2rem] sm:px-4 sm:py-4">
         <Outlet />
       </main>
 
@@ -106,17 +121,17 @@ export function AppShell() {
         <Button
           asChild
           size="icon"
-          className="fixed bottom-28 right-5 z-40 size-14 shadow-[var(--shadow-soft)] sm:right-8"
+          className="fixed bottom-24 right-4 z-40 size-12 shadow-[var(--shadow-soft)] sm:bottom-28 sm:right-8 sm:size-14"
           aria-label="새 항목 추가"
         >
           <Link to="/items/new">
-            <Plus className="size-6" />
+            <Plus className="size-5 sm:size-6" />
           </Link>
         </Button>
       )}
 
       <nav
-        className="glass-panel fixed bottom-5 left-1/2 z-40 flex w-[min(calc(100%-1rem),44rem)] -translate-x-1/2 items-center justify-between rounded-full p-2"
+        className="glass-panel fixed bottom-4 left-1/2 z-40 flex w-[min(calc(100%-0.75rem),44rem)] -translate-x-1/2 items-center justify-between rounded-full p-1.5 sm:bottom-5 sm:w-[min(calc(100%-1rem),44rem)] sm:p-2"
         aria-label="주요 메뉴"
       >
         {navItems.map((item) => {
@@ -127,7 +142,7 @@ export function AppShell() {
               key={item.to}
               className={({ isActive }) =>
                 [
-                  "flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition-colors",
+                  "flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-2.5 text-[13px] font-semibold transition-colors sm:gap-2 sm:px-4 sm:py-3 sm:text-sm",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(47,52,48,0.1)]"
                     : "text-muted-foreground hover:bg-surface-container-low"
