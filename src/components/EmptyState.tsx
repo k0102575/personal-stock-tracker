@@ -18,15 +18,15 @@ export function EmptyState({
   actionTo
 }: EmptyStateProps) {
   return (
-    <Card className="overflow-hidden bg-surface-container-low">
-      <CardContent className="space-y-5">
-        <div className="flex size-14 items-center justify-center rounded-full bg-primary-container text-primary">
-          <Sparkles className="size-6" />
+    <Card className="overflow-hidden bg-surface-container-lowest shadow-[var(--shadow-soft)]">
+      <CardContent className="relative space-y-5 px-4 py-5 sm:space-y-6 sm:px-8 sm:py-7">
+        <div className="flex size-12 items-center justify-center rounded-full bg-primary-container text-primary shadow-[0_12px_28px_rgba(88,98,73,0.12)] sm:size-14">
+          <Sparkles className="size-5 sm:size-6" />
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2.5 sm:space-y-3">
           <p className="eyebrow">{APP_NAME}</p>
-          <h2 className="text-3xl font-semibold tracking-[-0.04em]">{title}</h2>
-          <p className="max-w-2xl text-sm leading-7 text-muted-foreground">{description}</p>
+          <h2 className="text-[1.6rem] font-semibold tracking-[-0.04em] sm:text-[2.1rem]">{title}</h2>
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
         </div>
         {actionLabel && actionTo ? (
           <Button asChild className="w-full sm:w-auto">

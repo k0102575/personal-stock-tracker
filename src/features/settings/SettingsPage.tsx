@@ -14,11 +14,11 @@ export function SettingsPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card className="bg-surface-container-lowest">
-        <CardHeader className="flex-row items-start gap-3">
+        <CardHeader className="flex-row items-start gap-2.5 sm:gap-3">
           <Lock className="mt-1 size-5 text-primary" />
-          <div>
+          <div className="space-y-1.5 sm:space-y-2">
             <p className="eyebrow">세션</p>
             <CardTitle>관리자 접근</CardTitle>
             <CardDescription>
@@ -28,18 +28,18 @@ export function SettingsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Button onClick={() => auth.logout()} type="button" variant="secondary">
+          <Button className="w-full sm:w-auto" onClick={() => auth.logout()} type="button" variant="secondary">
             <LogOut className="size-4" />
             {auth.logoutPending ? "로그아웃 중..." : "로그아웃"}
           </Button>
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader className="flex-row items-start gap-3">
+          <CardHeader className="flex-row items-start gap-2.5 sm:gap-3">
             <Wifi className="mt-1 size-5 text-primary" />
-            <div>
+            <div className="space-y-1.5 sm:space-y-2">
               <p className="eyebrow">오프라인 및 설치</p>
               <CardTitle>PWA 관리</CardTitle>
               <CardDescription>
@@ -49,7 +49,7 @@ export function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => clearOfflineCache()} type="button" variant="ghost">
+            <Button className="w-full sm:w-auto" onClick={() => clearOfflineCache()} type="button" variant="ghost">
               <DatabaseZap className="size-4" />
               저장된 오프라인 데이터 비우기
             </Button>
@@ -57,9 +57,9 @@ export function SettingsPage() {
         </Card>
 
         <Card className="bg-surface-container-lowest">
-          <CardHeader className="flex-row items-start gap-3">
+          <CardHeader className="flex-row items-start gap-2.5 sm:gap-3">
             <Download className="mt-1 size-5 text-primary" />
-            <div>
+            <div className="space-y-1.5 sm:space-y-2">
               <p className="eyebrow">백업</p>
               <CardTitle>보관함 내보내기</CardTitle>
               <CardDescription>
@@ -68,8 +68,9 @@ export function SettingsPage() {
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4">
             <Button
+              className="w-full sm:w-auto"
               disabled={exportMutation.isPending}
               onClick={() => exportMutation.mutate()}
               type="button"

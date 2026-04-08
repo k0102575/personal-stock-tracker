@@ -51,26 +51,26 @@ export function InventoryPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <Card className="sticky top-[7.75rem] z-20 bg-[rgba(250,249,246,0.86)] backdrop-blur-xl">
-        <CardHeader className="space-y-3">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="space-y-2">
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="sticky top-[6rem] z-20 bg-background sm:top-[7.75rem]">
+        <CardHeader className="space-y-2.5 sm:space-y-3">
+          <div className="flex items-end justify-between gap-3">
+            <div className="space-y-1.5 sm:space-y-2">
               <p className="eyebrow">보관함 둘러보기</p>
               <CardTitle>다시 사기 전에 먼저 검색해보세요</CardTitle>
-              <CardDescription>
+              <CardDescription className="hidden sm:block">
                 카테고리, 상태, 우선 유통기한을 조합해서 필요한 물건만 빠르게 걸러낼 수
                 있습니다.
               </CardDescription>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-surface-container-lowest px-4 py-2 text-sm text-muted-foreground shadow-[0_8px_20px_rgba(47,52,48,0.03)]">
+            <div className="hidden items-center gap-2 rounded-full bg-surface-container-lowest px-4 py-2 text-sm text-muted-foreground shadow-[0_8px_20px_rgba(47,52,48,0.03)] sm:inline-flex">
               <SlidersHorizontal className="size-4" />
               <span>필터</span>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           <label className="field-stack block">
             <span className="field-label">검색</span>
             <div className="relative">
@@ -84,7 +84,7 @@ export function InventoryPage() {
             </div>
           </label>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2.5 sm:gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="field-stack block">
               <span className="field-label">카테고리</span>
               <Select
@@ -170,8 +170,9 @@ export function InventoryPage() {
             </label>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
             <Button
+              className="w-full sm:w-auto"
               type="button"
               variant={restockOnly ? "default" : "secondary"}
               size="sm"
@@ -181,6 +182,7 @@ export function InventoryPage() {
             </Button>
             {(search || category !== "all" || status !== "all" || expiry !== "all" || restockOnly) && (
               <Button
+                className="w-full sm:w-auto"
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -217,15 +219,15 @@ export function InventoryPage() {
         <>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-3xl font-semibold tracking-[-0.04em] text-foreground">
+              <h2 className="text-[1.7rem] font-semibold tracking-[-0.04em] text-foreground sm:text-[2.1rem]">
                 총 {itemsQuery.data.length}개 품목
               </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2">
                 한 번 열어본 항목은 오프라인에서도 다시 확인할 수 있어요.
               </p>
             </div>
           </div>
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:gap-4">
             {itemsQuery.data.map((item) => (
               <ItemCard item={item} key={item.id} />
             ))}

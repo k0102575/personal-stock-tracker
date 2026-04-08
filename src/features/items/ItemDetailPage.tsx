@@ -59,16 +59,16 @@ export function ItemDetailPage() {
   const daysUntilExpiry = getDaysUntil(item.expiryDate);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card className="bg-surface-container-lowest">
-        <CardContent className="space-y-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
+        <CardContent className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2.5 sm:space-y-3">
               <p className="eyebrow">{getCategoryLabel(item.category)}</p>
-              <h2 className="max-w-3xl text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
+              <h2 className="max-w-3xl text-[1.95rem] font-semibold tracking-[-0.05em] text-foreground sm:text-[3rem]">
                 {item.name}
               </h2>
-              <p className="text-base text-muted-foreground">{getItemSubtitle(item)}</p>
+              <p className="text-sm text-muted-foreground sm:text-[15px]">{getItemSubtitle(item)}</p>
               <InventorySignals {...signals} />
             </div>
             <span className="inline-flex w-fit rounded-full bg-surface-container px-4 py-2 text-sm font-semibold text-muted-foreground">
@@ -76,12 +76,12 @@ export function ItemDetailPage() {
             </span>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="rounded-[1.75rem] bg-surface-container-low px-5 py-5">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="space-y-2">
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="rounded-[1.5rem] bg-surface-container-low px-4 py-4 sm:rounded-[1.75rem] sm:px-5 sm:py-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+                <div className="space-y-1.5 sm:space-y-2">
                   <p className="eyebrow">현재 재고 감도</p>
-                  <h3 className="text-2xl font-semibold">
+                  <h3 className="text-[1.35rem] font-semibold sm:text-[1.7rem]">
                     현재 수량 {getQuantityLabel(item)} / 기준 수량 {getMinimumLabel(item)}
                   </h3>
                 </div>
@@ -92,13 +92,13 @@ export function ItemDetailPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="rounded-[1.5rem] bg-tertiary-container/70 px-5 py-4">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-1">
+              <div className="rounded-[1.5rem] bg-tertiary-container/70 px-4 py-4 sm:px-5">
                 <div className="flex items-start gap-3">
                   <CalendarClock className="mt-0.5 size-5 text-tertiary" />
                   <div className="space-y-1">
                     <p className="eyebrow text-tertiary/70">우선 유통기한</p>
-                    <p className="text-lg font-semibold text-tertiary">{formatDate(item.expiryDate)}</p>
+                    <p className="text-sm font-semibold text-tertiary sm:text-[1.05rem]">{formatDate(item.expiryDate)}</p>
                     <p className="text-sm text-tertiary/80">
                       {daysUntilExpiry === null
                         ? "기한 정보가 없습니다."
@@ -109,32 +109,32 @@ export function ItemDetailPage() {
                   </div>
                 </div>
               </div>
-              <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+              <div className="rounded-[1.5rem] bg-surface-container-low px-4 py-4 sm:px-5">
                 <div className="space-y-1">
                   <p className="eyebrow">수정일</p>
-                  <p className="text-lg font-semibold text-foreground">{formatDate(item.updatedAt)}</p>
+                  <p className="text-sm font-semibold text-foreground sm:text-[1.05rem]">{formatDate(item.updatedAt)}</p>
                   <p className="text-sm text-muted-foreground">생성일 {formatDate(item.createdAt)}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+          <dl className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+            <div className="rounded-[1.5rem] bg-surface-container-low px-4 py-4 sm:px-5">
               <dt className="eyebrow">현재 수량</dt>
-              <dd className="mt-2 text-2xl font-semibold">{getQuantityLabel(item)}</dd>
+              <dd className="mt-2 text-[1.35rem] font-semibold sm:text-[1.7rem]">{getQuantityLabel(item)}</dd>
             </div>
-            <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+            <div className="rounded-[1.5rem] bg-surface-container-low px-4 py-4 sm:px-5">
               <dt className="eyebrow">기준 수량</dt>
-              <dd className="mt-2 text-2xl font-semibold">{getMinimumLabel(item)}</dd>
+              <dd className="mt-2 text-[1.35rem] font-semibold sm:text-[1.7rem]">{getMinimumLabel(item)}</dd>
             </div>
-            <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+            <div className="rounded-[1.5rem] bg-surface-container-low px-4 py-4 sm:px-5">
               <dt className="eyebrow">우선 유통기한</dt>
-              <dd className="mt-2 text-base font-semibold">{formatDate(item.expiryDate)}</dd>
+              <dd className="mt-2 text-sm font-semibold sm:text-base">{formatDate(item.expiryDate)}</dd>
             </div>
-            <div className="rounded-[1.5rem] bg-surface-container-low px-5 py-4">
+            <div className="rounded-[1.5rem] bg-surface-container-low px-4 py-4 sm:px-5">
               <dt className="eyebrow">생성일</dt>
-              <dd className="mt-2 text-base font-semibold">{formatDate(item.createdAt)}</dd>
+              <dd className="mt-2 text-sm font-semibold sm:text-base">{formatDate(item.createdAt)}</dd>
             </div>
           </dl>
         </CardContent>
@@ -146,20 +146,21 @@ export function ItemDetailPage() {
           <CardTitle className="text-2xl">메모</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="rounded-[1.5rem] bg-surface-container-lowest px-5 py-5 text-sm leading-7 text-muted-foreground">
+          <p className="rounded-[1.5rem] bg-surface-container-lowest px-4 py-4 text-sm leading-6 text-muted-foreground sm:px-5 sm:py-5 sm:leading-7">
             {item.memo || "저장된 메모가 없습니다."}
           </p>
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[1.75rem] bg-[rgba(250,249,246,0.88)] px-4 py-4 backdrop-blur-xl shadow-[var(--shadow-ambient)]">
-        <Button asChild variant="secondary">
+      <div className="flex flex-col gap-2.5 sm:sticky sm:bottom-4 sm:z-20 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 sm:rounded-[1.75rem] sm:bg-background sm:px-4 sm:py-4">
+        <Button asChild variant="secondary" className="w-full sm:w-auto">
           <Link to={`/items/${item.id}/edit`}>
             <PencilLine className="size-4" />
             수정
           </Link>
         </Button>
         <Button
+          className="w-full sm:w-auto"
           variant="destructive"
           disabled={deleteMutation.isPending}
           onClick={() => {
