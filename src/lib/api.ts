@@ -1,5 +1,6 @@
 import type {
   DashboardSummary,
+  ImportItemsResult,
   InventoryItem,
   InventoryItemInput,
   ItemListFilters,
@@ -140,6 +141,12 @@ export const api = {
   deleteItem(id: string) {
     return request<void>(`/api/items/${id}`, {
       method: "DELETE"
+    });
+  },
+  importItems(csv: string) {
+    return request<ImportItemsResult>("/api/import", {
+      method: "POST",
+      body: JSON.stringify({ csv })
     });
   },
   async exportItems() {

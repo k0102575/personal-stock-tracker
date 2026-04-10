@@ -1,11 +1,15 @@
 import type { SessionInfo } from "../src/shared/types";
 import { cleanupExpiredSessions, createSession, destroySession, getAuthenticatedSession, verifyAdminPassword } from "./auth";
 import type { Env } from "./env";
-import { createItem, deleteItem, exportItemsCsv, getDashboardSummary, getItemById, listItems, parseFilters, updateItem } from "./items";
+import { createItem, deleteItem, exportItemsCsv, getDashboardSummary, getItemById, importItemsCsv, listItems, parseFilters, updateItem } from "./items";
 import { HttpError, errorResponse, json, readJson } from "./utils";
 
 interface LoginPayload {
   password?: string;
+}
+
+interface ImportPayload {
+  csv?: string;
 }
 
 export default {
@@ -53,6 +57,10 @@ export default {
 
       if (request.method === "POST" && url.pathname === "/api/items") {
         return json(await createItem(env, await readJson(request)), { status: 201 });
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/import") {
+        return json(await handleImport(request, env), { status: 201 });
       }
 
       const itemIdMatch = url.pathname.match(/^\/api\/items\/([^/]+)$/);
@@ -139,6 +147,15 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
       "Cache-Control": "no-store"
     }
   });
+}
+
+async function handleImport(request: Request, env: Env) {
+  const payload = await readJson<ImportPayload>(request);
+  if (typeof payload.csv !== "string" || !payload.csv.trim()) {
+    throw new HttpError(400, "CSV 내용이 필요합니다.");
+  }
+
+  return importItemsCsv(env, payload.csv);
 }
 
 async function requireSession(request: Request, env: Env) {

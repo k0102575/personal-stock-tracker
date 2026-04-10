@@ -71,6 +71,13 @@ export interface SessionInfo {
   expiresAt: string;
 }
 
+export interface ImportItemsResult {
+  totalRows: number;
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+}
+
 export interface ApiErrorResponse {
   error: string;
 }

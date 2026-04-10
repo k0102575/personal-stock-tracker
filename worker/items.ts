@@ -6,6 +6,7 @@ import {
 } from "../src/shared/constants";
 import type {
   DashboardSummary,
+  ImportItemsResult,
   InventoryItem,
   InventoryItemInput,
   ItemListFilters,
@@ -17,6 +18,23 @@ import { HttpError, escapeCsvCell, toIsoTimestamp } from "./utils";
 const ALLOWED_CATEGORIES = new Set<string>(ITEM_CATEGORIES);
 const ALLOWED_STATUSES = new Set<string>(ITEM_STATUSES);
 const ALLOWED_SORTS = new Set<string>(ITEM_SORTS);
+const CSV_HEADERS = [
+  "id",
+  "category",
+  "brand",
+  "name",
+  "volume_or_unit",
+  "current_quantity",
+  "minimum_quantity",
+  "purchase_source",
+  "purchase_date",
+  "opened_date",
+  "expiry_date",
+  "status",
+  "memo",
+  "created_at",
+  "updated_at"
+] as const;
 
 export function toInventoryItem(row: ItemRow): InventoryItem {
   return {
@@ -303,24 +321,6 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
 
 export async function exportItemsCsv(env: Env): Promise<string> {
   const items = await listItems(env, { sort: "updated_desc" });
-  const headers = [
-    "id",
-    "category",
-    "brand",
-    "name",
-    "volume_or_unit",
-    "current_quantity",
-    "minimum_quantity",
-    "purchase_source",
-    "purchase_date",
-    "opened_date",
-    "expiry_date",
-    "status",
-    "memo",
-    "created_at",
-    "updated_at"
-  ];
-
   const rows = items.map((item) =>
     [
       item.id,
@@ -343,7 +343,133 @@ export async function exportItemsCsv(env: Env): Promise<string> {
       .join(",")
   );
 
-  return [headers.join(","), ...rows].join("\n");
+  return [CSV_HEADERS.join(","), ...rows].join("\n");
+}
+
+export async function importItemsCsv(
+  env: Env,
+  csvText: string
+): Promise<ImportItemsResult> {
+  const rows = parseCsv(csvText);
+  if (rows.length === 0) {
+    throw new HttpError(400, "CSV 파일이 비어 있습니다.");
+  }
+
+  const headerRow = rows[0];
+  if (!headerRow) {
+    throw new HttpError(400, "CSV 헤더를 읽을 수 없습니다.");
+  }
+
+  const dataRows = rows.slice(1);
+  const normalizedHeaders = headerRow.map((value) => value.trim().replace(/^\uFEFF/, ""));
+  if (
+    normalizedHeaders.length !== CSV_HEADERS.length ||
+    normalizedHeaders.some((value, index) => value !== CSV_HEADERS[index])
+  ) {
+    throw new HttpError(400, "지원하지 않는 CSV 형식입니다. 앱에서 내보낸 파일을 사용해주세요.");
+  }
+
+  let totalRows = 0;
+  let createdCount = 0;
+  let updatedCount = 0;
+  let skippedCount = 0;
+
+  for (let index = 0; index < dataRows.length; index += 1) {
+    const row = dataRows[index];
+    if (!row) {
+      continue;
+    }
+
+    if (row.every((value) => !value.trim())) {
+      skippedCount += 1;
+      continue;
+    }
+
+    totalRows += 1;
+
+    if (row.length !== CSV_HEADERS.length) {
+      throw new HttpError(400, `CSV ${index + 2}번째 줄 형식이 올바르지 않습니다.`);
+    }
+
+    const record = Object.fromEntries(
+      CSV_HEADERS.map((header, columnIndex) => [header, row[columnIndex] ?? ""])
+    ) as Record<(typeof CSV_HEADERS)[number], string>;
+
+    const itemId = record.id.trim() || crypto.randomUUID();
+    const existing = await env.DB.prepare("SELECT id FROM items WHERE id = ? LIMIT 1")
+      .bind(itemId)
+      .first<{ id: string }>();
+    const importedItem = toImportedItem(record, index + 2);
+
+    await env.DB.prepare(
+      `
+        INSERT INTO items (
+          id,
+          category,
+          brand,
+          name,
+          volume_or_unit,
+          current_quantity,
+          minimum_quantity,
+          purchase_source,
+          purchase_date,
+          opened_date,
+          expiry_date,
+          status,
+          memo,
+          created_at,
+          updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          category = excluded.category,
+          brand = excluded.brand,
+          name = excluded.name,
+          volume_or_unit = excluded.volume_or_unit,
+          current_quantity = excluded.current_quantity,
+          minimum_quantity = excluded.minimum_quantity,
+          purchase_source = excluded.purchase_source,
+          purchase_date = excluded.purchase_date,
+          opened_date = excluded.opened_date,
+          expiry_date = excluded.expiry_date,
+          status = excluded.status,
+          memo = excluded.memo,
+          created_at = excluded.created_at,
+          updated_at = excluded.updated_at
+      `
+    )
+      .bind(
+        itemId,
+        importedItem.category,
+        importedItem.brand,
+        importedItem.name,
+        importedItem.volumeOrUnit,
+        importedItem.currentQuantity,
+        importedItem.minimumQuantity,
+        importedItem.purchaseSource,
+        importedItem.purchaseDate,
+        importedItem.openedDate,
+        importedItem.expiryDate,
+        importedItem.status,
+        importedItem.memo,
+        importedItem.createdAt,
+        importedItem.updatedAt
+      )
+      .run();
+
+    if (existing) {
+      updatedCount += 1;
+    } else {
+      createdCount += 1;
+    }
+  }
+
+  return {
+    totalRows,
+    createdCount,
+    updatedCount,
+    skippedCount
+  };
 }
 
 export function parseFilters(url: URL): ItemListFilters {
@@ -497,4 +623,122 @@ function toDateString(value: unknown, fieldName: string): string | null {
     throw new HttpError(400, `${fieldName} must use YYYY-MM-DD format.`);
   }
   return value;
+}
+
+function toImportedItem(
+  record: Record<(typeof CSV_HEADERS)[number], string>,
+  rowNumber: number
+): InventoryItemInput & { createdAt: string; updatedAt: string } {
+  const input = validateItemInput({
+    category: record.category,
+    brand: record.brand,
+    name: record.name,
+    volumeOrUnit: record.volume_or_unit,
+    currentQuantity: toImportedNumber(record.current_quantity, "current_quantity", rowNumber),
+    minimumQuantity: toImportedNumber(record.minimum_quantity, "minimum_quantity", rowNumber),
+    purchaseSource: record.purchase_source,
+    purchaseDate: emptyToNull(record.purchase_date),
+    openedDate: emptyToNull(record.opened_date),
+    expiryDate: emptyToNull(record.expiry_date),
+    status: record.status,
+    memo: record.memo
+  }) as InventoryItemInput;
+
+  return {
+    ...input,
+    createdAt: toImportedTimestamp(record.created_at),
+    updatedAt: toImportedTimestamp(record.updated_at)
+  };
+}
+
+function toImportedNumber(value: string, fieldName: string, rowNumber: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new HttpError(400, `CSV ${rowNumber}번째 줄의 ${fieldName} 값이 올바르지 않습니다.`);
+  }
+  return parsed;
+}
+
+function toImportedTimestamp(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return toIsoTimestamp();
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new HttpError(400, "CSV의 생성일 또는 수정일 형식이 올바르지 않습니다.");
+  }
+
+  return parsed.toISOString();
+}
+
+function emptyToNull(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentValue = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const nextChar = text[index + 1];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (nextChar === '"') {
+          currentValue += '"';
+          index += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else if (char === "\r" && nextChar === "\n") {
+        currentValue += "\n";
+        index += 1;
+      } else {
+        currentValue += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+      continue;
+    }
+
+    if (char === ",") {
+      currentRow.push(currentValue);
+      currentValue = "";
+      continue;
+    }
+
+    if (char === "\n") {
+      currentRow.push(currentValue);
+      rows.push(currentRow);
+      currentRow = [];
+      currentValue = "";
+      continue;
+    }
+
+    if (char === "\r") {
+      continue;
+    }
+
+    currentValue += char;
+  }
+
+  if (inQuotes) {
+    throw new HttpError(400, "CSV 인용부호가 올바르게 닫히지 않았습니다.");
+  }
+
+  if (currentValue || currentRow.length > 0) {
+    currentRow.push(currentValue);
+    rows.push(currentRow);
+  }
+
+  return rows;
 }
