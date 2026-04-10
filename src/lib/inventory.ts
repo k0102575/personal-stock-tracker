@@ -1,11 +1,19 @@
-import { EXPIRY_SOON_DAYS } from "../shared/constants";
+import { APP_TIME_ZONE, EXPIRY_SOON_DAYS } from "../shared/constants";
 import { getCategoryLabel } from "../shared/labels";
 import type { InventoryItem } from "../shared/types";
 
 const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
   month: "long",
-  day: "numeric"
+  day: "numeric",
+  timeZone: APP_TIME_ZONE
+});
+
+const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: APP_TIME_ZONE
 });
 
 export function formatDate(value: string | null): string {
@@ -13,8 +21,8 @@ export function formatDate(value: string | null): string {
     return "미입력";
   }
 
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
+  const parsed = parseDateForDisplay(value);
+  if (!parsed) {
     return value;
   }
 
@@ -22,14 +30,14 @@ export function formatDate(value: string | null): string {
 }
 
 export function getInventorySignals(item: InventoryItem) {
-  const today = startOfDay(new Date());
-  const expiry = item.expiryDate ? startOfDay(new Date(item.expiryDate)) : null;
+  const todayKey = getTodayKey();
+  const expiry = item.expiryDate;
   const lowStock = item.currentQuantity <= item.minimumQuantity;
-  const expired = Boolean(expiry && expiry.getTime() < today.getTime());
+  const expired = Boolean(expiry && expiry < todayKey);
   const expiringSoon = Boolean(
     expiry &&
-      expiry.getTime() >= today.getTime() &&
-      expiry.getTime() <= today.getTime() + EXPIRY_SOON_DAYS * 24 * 60 * 60 * 1000
+      expiry >= todayKey &&
+      getDaysBetween(todayKey, expiry) <= EXPIRY_SOON_DAYS
   );
 
   return {
@@ -98,18 +106,11 @@ export function getStockMeterValue(
 }
 
 export function getDaysUntil(value: string | null): number | null {
-  if (!value) {
+  if (!value || !isDateOnly(value)) {
     return null;
   }
 
-  const parsed = startOfDay(new Date(value));
-
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  const today = startOfDay(new Date());
-  return Math.round((parsed.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+  return getDaysBetween(getTodayKey(), value);
 }
 
 export function toFormDefaults(item?: InventoryItem) {
@@ -133,6 +134,48 @@ export function trimTrailingZeros(value: number): string {
   return value % 1 === 0 ? String(value) : value.toFixed(1).replace(/\.0$/, "");
 }
 
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+function parseDateForDisplay(value: string): Date | null {
+  if (isDateOnly(value)) {
+    const { year, month, day } = parseDateParts(value);
+    return new Date(Date.UTC(year, month - 1, day, 12));
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getTodayKey(): string {
+  return dayKeyFormatter.format(new Date());
+}
+
+function getDaysBetween(fromDate: string, toDate: string): number {
+  return Math.round(
+    (toUtcDayValue(toDate) - toUtcDayValue(fromDate)) / (24 * 60 * 60 * 1000)
+  );
+}
+
+function toUtcDayValue(value: string): number {
+  const { year, month, day } = parseDateParts(value);
+  return Date.UTC(year, month - 1, day);
+}
+
+function isDateOnly(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function parseDateParts(value: string): { year: number; month: number; day: number } {
+  const parts = value.split("-");
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day)
+  ) {
+    throw new Error(`Invalid date value: ${value}`);
+  }
+
+  return { year, month, day };
 }

@@ -16,3 +16,5 @@ export const EXPIRY_FILTERS = ["all", "expired", "soon"] as const;
 
 export const DEFAULT_SESSION_TTL_DAYS = 14;
 export const EXPIRY_SOON_DAYS = 30;
+export const APP_TIME_ZONE = "Asia/Seoul";
+export const APP_SQLITE_NOW_MODIFIER = "+9 hours";

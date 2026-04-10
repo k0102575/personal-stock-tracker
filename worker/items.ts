@@ -1,4 +1,5 @@
 import {
+  APP_SQLITE_NOW_MODIFIER,
   EXPIRY_SOON_DAYS,
   ITEM_CATEGORIES,
   ITEM_SORTS,
@@ -35,6 +36,7 @@ const CSV_HEADERS = [
   "created_at",
   "updated_at"
 ] as const;
+const APP_TODAY_SQL = `date('now', '${APP_SQLITE_NOW_MODIFIER}')`;
 
 export function toInventoryItem(row: ItemRow): InventoryItem {
   return {
@@ -94,11 +96,11 @@ export async function listItems(env: Env, filters: ItemListFilters): Promise<Inv
   }
 
   if (filters.expiry === "expired") {
-    sql += " AND expiry_date IS NOT NULL AND date(expiry_date) < date('now')";
+    sql += ` AND expiry_date IS NOT NULL AND date(expiry_date) < ${APP_TODAY_SQL}`;
   } else if (filters.expiry === "soon") {
     sql += `
       AND expiry_date IS NOT NULL
-      AND date(expiry_date) BETWEEN date('now') AND date('now', '+${EXPIRY_SOON_DAYS} day')
+      AND date(expiry_date) BETWEEN ${APP_TODAY_SQL} AND date(${APP_TODAY_SQL}, '+${EXPIRY_SOON_DAYS} day')
     `;
   }
 
@@ -258,12 +260,12 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
       SELECT
         (SELECT COUNT(*) FROM items) AS total_items,
         (SELECT COUNT(*) FROM items WHERE current_quantity <= minimum_quantity) AS low_stock_count,
-        (SELECT COUNT(*) FROM items WHERE expiry_date IS NOT NULL AND date(expiry_date) < date('now')) AS expired_count,
+        (SELECT COUNT(*) FROM items WHERE expiry_date IS NOT NULL AND date(expiry_date) < ${APP_TODAY_SQL}) AS expired_count,
         (
           SELECT COUNT(*)
           FROM items
           WHERE expiry_date IS NOT NULL
-          AND date(expiry_date) BETWEEN date('now') AND date('now', '+${EXPIRY_SOON_DAYS} day')
+          AND date(expiry_date) BETWEEN ${APP_TODAY_SQL} AND date(${APP_TODAY_SQL}, '+${EXPIRY_SOON_DAYS} day')
         ) AS expiring_soon_count
     `
   ).first<{
