@@ -28,6 +28,8 @@ import {
 } from "../../shared/labels";
 import type { InventoryItemInput } from "../../shared/types";
 
+type QuantityField = "currentQuantity" | "minimumQuantity";
+
 const EMPTY_FORM: InventoryItemInput = {
   category: "skincare",
   brand: "",
@@ -43,11 +45,18 @@ const EMPTY_FORM: InventoryItemInput = {
   memo: ""
 };
 
+const EMPTY_QUANTITY_DRAFTS: Record<QuantityField, string> = {
+  currentQuantity: String(EMPTY_FORM.currentQuantity),
+  minimumQuantity: String(EMPTY_FORM.minimumQuantity)
+};
+
 export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<InventoryItemInput>(EMPTY_FORM);
+  const [quantityDrafts, setQuantityDrafts] =
+    useState<Record<QuantityField, string>>(EMPTY_QUANTITY_DRAFTS);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [hasEditedQuantity, setHasEditedQuantity] = useState(mode === "edit");
 
@@ -59,13 +68,18 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
 
   useEffect(() => {
     if (mode === "edit" && itemQuery.data) {
-      setForm(toFormDefaults(itemQuery.data));
+      const defaults = toFormDefaults(itemQuery.data);
+      setForm(defaults);
+      setQuantityDrafts({
+        currentQuantity: String(defaults.currentQuantity),
+        minimumQuantity: String(defaults.minimumQuantity)
+      });
     }
   }, [itemQuery.data, mode]);
 
   const mutation = useMutation({
-    mutationFn: async () =>
-      mode === "create" ? api.createItem(normalizeForm(form)) : api.updateItem(id, normalizeForm(form)),
+    mutationFn: async (payload: InventoryItemInput) =>
+      mode === "create" ? api.createItem(payload) : api.updateItem(id, payload),
     onSuccess: async (item) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["items"] }),
@@ -100,9 +114,17 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
 
   function handleNumberChange(key: "currentQuantity" | "minimumQuantity") {
     return (event: ChangeEvent<HTMLInputElement>) => {
-      const nextValue = Number.parseInt(event.target.value, 10);
+      const nextValue = event.target.value;
       setHasEditedQuantity(true);
-      updateField(key, Number.isNaN(nextValue) ? 0 : Math.max(0, nextValue));
+      setQuantityDrafts((current) => ({
+        ...current,
+        [key]: nextValue
+      }));
+
+      const parsedValue = parseQuantityDraft(nextValue);
+      if (parsedValue !== null) {
+        updateField(key, parsedValue);
+      }
     };
   }
 
@@ -126,12 +148,28 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
       return;
     }
 
+    const currentQuantity = parseQuantityDraft(quantityDrafts.currentQuantity);
+    const minimumQuantity = parseQuantityDraft(quantityDrafts.minimumQuantity);
+
+    if (currentQuantity === null || minimumQuantity === null) {
+      setValidationError("현재 수량과 기준 수량을 모두 입력해주세요.");
+      return;
+    }
+
     setValidationError(null);
-    mutation.mutate();
+    mutation.mutate(
+      normalizeForm({
+        ...form,
+        currentQuantity,
+        minimumQuantity
+      })
+    );
   }
 
   const showQuantityPreview = mode === "edit" || hasEditedQuantity;
-  const stockMeterTone = form.currentQuantity === 0 ? "danger" : "primary";
+  const previewCurrentQuantity = parseQuantityDraft(quantityDrafts.currentQuantity);
+  const previewMinimumQuantity = parseQuantityDraft(quantityDrafts.minimumQuantity);
+  const stockMeterTone = previewCurrentQuantity === 0 ? "danger" : "primary";
 
   return (
     <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
@@ -144,14 +182,18 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
                 <p className="eyebrow">현재 재고 감도</p>
                 <div className="flex flex-wrap items-end gap-3 sm:gap-4">
                   <p className="text-[1.55rem] font-semibold text-foreground sm:text-[2.1rem]">
-                    {showQuantityPreview ? `${form.currentQuantity} / ${form.minimumQuantity}` : "수량 입력 전"}
+                    {showQuantityPreview
+                      ? `${quantityDrafts.currentQuantity || "-"} / ${quantityDrafts.minimumQuantity || "-"}`
+                      : "수량 입력 전"}
                   </p>
                   <StockMeter
                     activeCount={
                       showQuantityPreview
+                      && previewCurrentQuantity !== null
+                      && previewMinimumQuantity !== null
                         ? getStockMeterValue({
-                            currentQuantity: form.currentQuantity,
-                            minimumQuantity: form.minimumQuantity
+                            currentQuantity: previewCurrentQuantity,
+                            minimumQuantity: previewMinimumQuantity
                           })
                         : 0
                     }
@@ -280,7 +322,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
                 min="0"
                 step="1"
                 type="number"
-                value={form.currentQuantity}
+                value={quantityDrafts.currentQuantity}
                 onChange={handleNumberChange("currentQuantity")}
               />
               <span className="field-hint">
@@ -288,7 +330,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
                   ? "처음 등록하는 시점의 실제 보유 수량을 적어주세요."
                   : "지금 남아 있는 수량을 기준으로 입력해주세요."}
               </span>
-              {form.currentQuantity === 0 && form.status !== "used_up" && (
+              {previewCurrentQuantity === 0 && form.status !== "used_up" && (
                 <span className="field-hint">
                   수량이 0이면 저장 시 상태가 `사용 완료`로 반영됩니다.
                 </span>
@@ -302,7 +344,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
                 min="0"
                 step="1"
                 type="number"
-                value={form.minimumQuantity}
+                value={quantityDrafts.minimumQuantity}
                 onChange={handleNumberChange("minimumQuantity")}
               />
               <span className="field-hint">
@@ -383,4 +425,17 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
       </div>
     </form>
   );
+}
+
+function parseQuantityDraft(value: string): number | null {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    return null;
+  }
+
+  return Math.max(0, parsed);
 }
