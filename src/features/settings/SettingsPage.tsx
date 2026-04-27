@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { ClipboardPaste, DatabaseZap, Download, Lock, LogOut, Wifi } from "lucide-react";
+import { ChangeEvent, useRef, useState } from "react";
+import { DatabaseZap, Download, Lock, LogOut, Upload, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "../auth/AuthProvider";
 import { api, getErrorMessage } from "../../lib/api";
 import { clearOfflineCache } from "../../lib/offlineCache";
@@ -13,25 +12,21 @@ import type { ImportItemsResult } from "../../shared/types";
 export function SettingsPage() {
   const auth = useAuth();
   const queryClient = useQueryClient();
-  const [sheetText, setSheetText] = useState("");
-  const [exportFeedback, setExportFeedback] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImportFile, setSelectedImportFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportItemsResult | null>(null);
 
   const exportMutation = useMutation({
-    mutationFn: api.exportItems,
-    onSuccess: (mode) => {
-      setExportFeedback(
-        mode === "copied"
-          ? "스프레드시트용 데이터가 클립보드에 복사되었습니다."
-          : "클립보드 권한이 없어 TSV 파일로 저장했습니다. Google 스프레드시트에서 가져오기로 열어주세요."
-      );
-    }
+    mutationFn: api.exportItems
   });
   const importMutation = useMutation({
     mutationFn: api.importItems,
     onSuccess: async (result) => {
       setImportResult(result);
-      setSheetText("");
+      setSelectedImportFile(null);
+      if (importInputRef.current) {
+        importInputRef.current.value = "";
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["items"] }),
         queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] })
@@ -39,12 +34,17 @@ export function SettingsPage() {
     }
   });
 
+  function handleImportFileChange(event: ChangeEvent<HTMLInputElement>) {
+    setImportResult(null);
+    setSelectedImportFile(event.target.files?.[0] ?? null);
+  }
+
   function handleImport() {
-    if (!sheetText.trim()) {
+    if (!selectedImportFile) {
       return;
     }
 
-    importMutation.mutate(sheetText);
+    importMutation.mutate(selectedImportFile);
   }
 
   return (
@@ -95,10 +95,10 @@ export function SettingsPage() {
             <Download className="mt-1 size-5 text-primary" />
             <div className="space-y-1.5 sm:space-y-2">
               <p className="eyebrow">백업</p>
-              <CardTitle>Google 스프레드시트로 보내기</CardTitle>
+              <CardTitle>엑셀 파일로 내보내기</CardTitle>
               <CardDescription>
-                현재 보관함 데이터를 Google 스프레드시트에 바로 붙여넣을 수 있는 탭 구분
-                텍스트로 복사합니다.
+                현재 보관함 데이터를 `.xlsx` 파일로 내려받아 백업하거나 다시 가져오기에
+                활용할 수 있어요.
               </CardDescription>
             </div>
           </CardHeader>
@@ -110,13 +110,8 @@ export function SettingsPage() {
               type="button"
             >
               <Download className="size-4" />
-              {exportMutation.isPending ? "복사 준비 중..." : "스프레드시트용 복사"}
+              {exportMutation.isPending ? "내보내기 준비 중..." : "XLSX 다운로드"}
             </Button>
-            {exportFeedback && !exportMutation.isError && (
-              <div className="inline-alert" role="status">
-                {exportFeedback}
-              </div>
-            )}
             {exportMutation.isError && (
               <div className="inline-alert" role="alert">
                 {getErrorMessage(exportMutation.error)}
@@ -127,38 +122,47 @@ export function SettingsPage() {
 
         <Card>
           <CardHeader className="flex-row items-start gap-2.5 sm:gap-3">
-            <ClipboardPaste className="mt-1 size-5 text-primary" />
+            <Upload className="mt-1 size-5 text-primary" />
             <div className="space-y-1.5 sm:space-y-2">
               <p className="eyebrow">복구</p>
-              <CardTitle>Google 스프레드시트에서 가져오기</CardTitle>
+              <CardTitle>엑셀 파일에서 가져오기</CardTitle>
               <CardDescription>
-                앱에서 복사한 헤더를 기준으로 Google 스프레드시트에 붙여넣고, 다시 전체
-                범위를 복사해서 여기에 넣으면 복구할 수 있어요. 같은 항목 ID가 있으면 새로
-                추가하지 않고 내용을 갱신합니다.
+                앱에서 내보낸 `.xlsx` 파일이나 같은 형식의 템플릿 파일을 불러와 복구할 수
+                있어요. 같은 항목 ID가 있으면 새로 추가하지 않고 내용을 갱신합니다.
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
-            <Textarea
-              rows={8}
-              value={sheetText}
-              onChange={(event) => {
-                setImportResult(null);
-                setSheetText(event.target.value);
-              }}
-              placeholder={"id\tcategory\tbrand\tname\tvolume_or_unit\tcurrent_quantity\tminimum_quantity\tpurchase_source\tpurchase_date\texpiry_date\tstatus\tmemo\tcreated_at\tupdated_at"}
+            <input
+              ref={importInputRef}
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="hidden"
+              onChange={handleImportFileChange}
+              type="file"
             />
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+              <Button
+                className="w-full sm:w-auto"
+                onClick={() => importInputRef.current?.click()}
+                type="button"
+                variant="secondary"
+              >
+                XLSX 파일 선택
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                disabled={!selectedImportFile || importMutation.isPending}
+                onClick={handleImport}
+                type="button"
+              >
+                {importMutation.isPending ? "가져오는 중..." : "가져오기 실행"}
+              </Button>
+            </div>
             <p className="text-sm text-muted-foreground">
-              Google 스프레드시트에서 헤더 포함 전체 범위를 복사해 그대로 붙여넣어주세요.
+              {selectedImportFile
+                ? `선택된 파일: ${selectedImportFile.name}`
+                : "선택된 파일이 없습니다."}
             </p>
-            <Button
-              className="w-full sm:w-auto"
-              disabled={!sheetText.trim() || importMutation.isPending}
-              onClick={handleImport}
-              type="button"
-            >
-              {importMutation.isPending ? "가져오는 중..." : "가져오기 실행"}
-            </Button>
 
             {importResult && (
               <div className="inline-alert" role="status">

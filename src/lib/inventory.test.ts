@@ -14,7 +14,6 @@ function createItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
     purchaseSource: "",
     purchaseDate: null,
     expiryDate: "2026-04-10",
-    status: "in_stock",
     memo: "",
     createdAt: "2026-04-01T00:00:00.000Z",
     updatedAt: "2026-04-01T00:00:00.000Z",

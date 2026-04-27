@@ -143,20 +143,3 @@ function toBase64Url(bytes: Uint8Array): string {
   const raw = btoa(String.fromCharCode(...bytes));
   return raw.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
-
-export function escapeDelimitedCell(
-  value: string | number | null,
-  delimiter: string
-): string {
-  if (value === null) {
-    return "";
-  }
-
-  const stringValue = String(value);
-  const escapedDelimiter = delimiter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  if (new RegExp(`["\\n\\r${escapedDelimiter}]`).test(stringValue)) {
-    return `"${stringValue.replace(/"/g, '""')}"`;
-  }
-
-  return stringValue;
-}

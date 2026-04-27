@@ -19,7 +19,7 @@ import {
   getQuantityLabel,
   getStockMeterValue
 } from "../../lib/inventory";
-import { getCategoryLabel, getStatusLabel } from "../../shared/labels";
+import { getCategoryLabel } from "../../shared/labels";
 
 export function ItemDetailPage() {
   const { id = "" } = useParams();
@@ -71,9 +71,6 @@ export function ItemDetailPage() {
               <p className="text-sm text-muted-foreground sm:text-[15px]">{getItemSubtitle(item)}</p>
               <InventorySignals {...signals} />
             </div>
-            <span className="inline-flex w-fit rounded-full bg-surface-container px-4 py-2 text-sm font-semibold text-muted-foreground">
-              {getStatusLabel(item.status)}
-            </span>
           </div>
 
           <div className="grid gap-3 sm:gap-4 lg:grid-cols-[1.2fr_0.8fr]">

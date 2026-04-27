@@ -26,7 +26,6 @@ export interface ItemRow {
   purchase_source: string;
   purchase_date: string | null;
   expiry_date: string | null;
-  status: InventoryItem["status"];
   memo: string;
   created_at: string;
   updated_at: string;

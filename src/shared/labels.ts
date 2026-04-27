@@ -1,4 +1,4 @@
-import type { ExpiryFilter, ItemCategory, ItemSort, ItemStatus } from "./types";
+import type { ExpiryFilter, ItemCategory, ItemSort } from "./types";
 
 export const APP_NAME = "생활 재고함";
 
@@ -10,11 +10,6 @@ const CATEGORY_LABELS: Record<ItemCategory, string> = {
   bodycare: "바디케어",
   haircare: "헤어케어",
   etc: "기타"
-};
-
-const STATUS_LABELS: Record<ItemStatus, string> = {
-  in_stock: "재고 있음",
-  used_up: "사용 완료"
 };
 
 const SORT_LABELS: Record<ItemSort, string> = {
@@ -31,18 +26,6 @@ const EXPIRY_FILTER_LABELS: Record<ExpiryFilter | "all", string> = {
 
 export function getCategoryLabel(category: ItemCategory): string {
   return CATEGORY_LABELS[category];
-}
-
-export function getStatusLabel(status: ItemStatus): string {
-  return STATUS_LABELS[status];
-}
-
-export function getStatusDescription(status: ItemStatus): string {
-  if (status === "in_stock") {
-    return "서랍장에 아직 재고가 남아 있어서 다시 사기 전에 먼저 확인하면 좋은 상태예요.";
-  }
-
-  return "남아 있는 수량이 없어 재구매를 검토할 수 있는 상태예요.";
 }
 
 export function getSortLabel(sort: ItemSort): string {

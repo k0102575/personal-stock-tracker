@@ -11,7 +11,7 @@ import {
   getQuantityLabel,
   getStockMeterValue
 } from "../../lib/inventory";
-import { getCategoryLabel, getStatusLabel } from "../../shared/labels";
+import { getCategoryLabel } from "../../shared/labels";
 import type { InventoryItem } from "../../shared/types";
 
 export function ItemCard({ item }: { item: InventoryItem }) {
@@ -34,9 +34,6 @@ export function ItemCard({ item }: { item: InventoryItem }) {
           </div>
         </div>
         <div className="space-y-2 text-right sm:space-y-3">
-          <span className="inline-flex rounded-full bg-surface-container px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground">
-            {getStatusLabel(item.status)}
-          </span>
           <span className="hidden items-center gap-1 text-sm font-semibold text-primary sm:inline-flex">
             열기
             <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

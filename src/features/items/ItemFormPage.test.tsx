@@ -63,7 +63,6 @@ function createCreatedItem(): InventoryItem {
     purchaseSource: "",
     purchaseDate: null,
     expiryDate: null,
-    status: "in_stock",
     memo: "",
     createdAt: "2026-04-10T00:00:00.000Z",
     updatedAt: "2026-04-10T00:00:00.000Z"
@@ -78,6 +77,20 @@ function renderPage() {
       <MemoryRouter initialEntries={["/items/new"]}>
         <Routes>
           <Route path="/items/new" element={<ItemFormPage mode="create" />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+}
+
+function renderEditPage() {
+  const queryClient = createQueryClient();
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={["/items/existing/edit"]}>
+        <Routes>
+          <Route path="/items/:id/edit" element={<ItemFormPage mode="edit" />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -118,7 +131,21 @@ describe("ItemFormPage", () => {
     expect(createItemMock).not.toHaveBeenCalled();
   });
 
-  it("submits zero quantity intentionally as used_up", async () => {
+  it("shows the saved category in edit mode", async () => {
+    getItemMock.mockResolvedValue({
+      ...createCreatedItem(),
+      id: "existing",
+      category: "makeup",
+      name: "쿠션"
+    });
+
+    renderEditPage();
+
+    expect(await screen.findByDisplayValue("쿠션")).toBeTruthy();
+    expect(screen.getByRole("combobox").textContent).toContain("메이크업");
+  });
+
+  it("submits zero quantity intentionally", async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -136,8 +163,7 @@ describe("ItemFormPage", () => {
       expect(createItemMock).toHaveBeenCalledWith(
         expect.objectContaining({
           name: "핸드크림",
-          currentQuantity: 0,
-          status: "used_up"
+          currentQuantity: 0
         })
       )
     );

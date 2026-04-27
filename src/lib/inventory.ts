@@ -124,7 +124,6 @@ export function toFormDefaults(item?: InventoryItem) {
     purchaseSource: item?.purchaseSource ?? "",
     purchaseDate: item?.purchaseDate ?? null,
     expiryDate: item?.expiryDate ?? null,
-    status: item?.status ?? "in_stock",
     memo: item?.memo ?? ""
   };
 }

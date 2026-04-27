@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS items (
   purchase_source TEXT NOT NULL DEFAULT '',
   purchase_date TEXT,
   expiry_date TEXT,
-  status TEXT NOT NULL DEFAULT 'in_stock',
   memo TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP

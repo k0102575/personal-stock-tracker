@@ -49,10 +49,10 @@ export function DashboardPage() {
     <div className="space-y-4 sm:space-y-6">
       <section className="space-y-1">
         <h2 className="font-serif text-[1.95rem] font-medium tracking-[-0.04em] text-foreground sm:text-[2.2rem]">
-          Shelf Overview
+          보관함 한눈에 보기
         </h2>
         <p className="text-sm uppercase tracking-[0.14em] text-muted-foreground/80">
-          The Ritual of Care • Today
+          오늘 기준 재고 흐름
         </p>
       </section>
 
@@ -61,7 +61,7 @@ export function DashboardPage() {
           <CardContent className="flex h-36 flex-col justify-between sm:h-40">
             <div className="flex items-start justify-between">
               <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                Total Items
+                전체 품목
               </p>
               <Package2 className="size-5 text-primary/60" />
             </div>
@@ -70,16 +70,16 @@ export function DashboardPage() {
                 {summary.totalItems}
               </strong>
               <span className="pb-1 text-[11px] italic text-muted-foreground">
-                Curated Essentials
+                보관 중인 재고
               </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-surface-container-low">
+        <Card className={summary.expiringSoonCount > 0 ? "bg-surface-container-low" : "col-span-2 bg-surface-container-low"}>
           <CardContent className="flex h-28 flex-col justify-between sm:h-32">
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              Low Stock
+              재구매 필요
             </p>
             <strong className="font-serif text-[1.9rem] font-medium text-foreground sm:text-[2.1rem]">
               {String(summary.lowStockCount).padStart(2, "0")}
@@ -87,44 +87,48 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-tertiary-container">
-          <CardContent className="flex h-28 flex-col justify-between sm:h-32">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-tertiary/80">
-              Expiring Soon
-            </p>
-            <strong className="font-serif text-[1.9rem] font-medium text-tertiary sm:text-[2.1rem]">
-              {String(summary.expiringSoonCount).padStart(2, "0")}
-            </strong>
-          </CardContent>
-        </Card>
+        {summary.expiringSoonCount > 0 && (
+          <Card className="bg-tertiary-container">
+            <CardContent className="flex h-28 flex-col justify-between sm:h-32">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-tertiary/80">
+                유통기한 임박
+              </p>
+              <strong className="font-serif text-[1.9rem] font-medium text-tertiary sm:text-[2.1rem]">
+                {String(summary.expiringSoonCount).padStart(2, "0")}
+              </strong>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="col-span-2 bg-error-container/20">
-          <CardContent className="flex items-center justify-between gap-4 py-5">
-            <div className="flex items-center gap-4">
-              <div className="flex size-10 items-center justify-center rounded-full bg-error-container text-error-dim">
-                <TriangleAlert className="size-5" />
+        {summary.expiredCount > 0 && (
+          <Card className="col-span-2 bg-error-container/20">
+            <CardContent className="flex items-center justify-between gap-4 py-5">
+              <div className="flex items-center gap-4">
+                <div className="flex size-10 items-center justify-center rounded-full bg-error-container text-error-dim">
+                  <TriangleAlert className="size-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-error-dim/70">
+                    유통기한 경과
+                  </p>
+                  <p className="font-serif text-base font-medium text-error-dim sm:text-lg">
+                    확인이 필요한 항목 {summary.expiredCount}개
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-error-dim/70">
-                  Expired
-                </p>
-                <p className="font-serif text-base font-medium text-error-dim sm:text-lg">
-                  {summary.expiredCount} Item Needs Attention
-                </p>
-              </div>
-            </div>
-            <ArrowUpRight className="size-4 text-error-dim/40" />
-          </CardContent>
-        </Card>
+              <ArrowUpRight className="size-4 text-error-dim/40" />
+            </CardContent>
+          </Card>
+        )}
       </section>
 
       <section className="space-y-4">
         <div className="flex items-end justify-between">
           <h3 className="font-serif text-[1.25rem] font-medium text-foreground">
-            Recent Additions
+            최근 수정한 품목
           </h3>
           <Button asChild variant="link" size="sm" className="h-auto px-0 text-[11px] uppercase tracking-[0.16em]">
-            <Link to="/inventory">View All</Link>
+            <Link to="/inventory">전체 보기</Link>
           </Button>
         </div>
         <Card className="bg-transparent shadow-none">
@@ -172,7 +176,7 @@ export function DashboardPage() {
       </section>
 
       <section className="space-y-4">
-        <h3 className="font-serif text-[1.25rem] font-medium text-foreground">Categories</h3>
+        <h3 className="font-serif text-[1.25rem] font-medium text-foreground">카테고리</h3>
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
           {summary.categories.map((entry) => (
             <div
@@ -186,7 +190,7 @@ export function DashboardPage() {
                 {getCategoryLabel(entry.category)}
               </span>
               <span className="text-[10px] italic text-muted-foreground">
-                {entry.count} items
+                {entry.count}개 품목
               </span>
             </div>
           ))}

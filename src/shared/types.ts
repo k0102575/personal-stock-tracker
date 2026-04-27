@@ -1,12 +1,10 @@
 import type {
   EXPIRY_FILTERS,
   ITEM_CATEGORIES,
-  ITEM_SORTS,
-  ITEM_STATUSES
+  ITEM_SORTS
 } from "./constants";
 
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
-export type ItemStatus = (typeof ITEM_STATUSES)[number];
 export type ItemSort = (typeof ITEM_SORTS)[number];
 export type ExpiryFilter = (typeof EXPIRY_FILTERS)[number];
 
@@ -21,7 +19,6 @@ export interface InventoryItem {
   purchaseSource: string;
   purchaseDate: string | null;
   expiryDate: string | null;
-  status: ItemStatus;
   memo: string;
   createdAt: string;
   updatedAt: string;
@@ -37,7 +34,6 @@ export interface InventoryItemInput {
   purchaseSource: string;
   purchaseDate: string | null;
   expiryDate: string | null;
-  status: ItemStatus;
   memo: string;
 }
 
@@ -47,7 +43,6 @@ export interface ItemListFilters {
   restockOnly?: boolean;
   expiry?: ExpiryFilter;
   sort?: ItemSort;
-  status?: ItemStatus | "all";
 }
 
 export interface CategoryCount {

@@ -2,8 +2,7 @@ import {
   APP_SQLITE_NOW_MODIFIER,
   EXPIRY_SOON_DAYS,
   ITEM_CATEGORIES,
-  ITEM_SORTS,
-  ITEM_STATUSES
+  ITEM_SORTS
 } from "../src/shared/constants";
 import type {
   DashboardSummary,
@@ -13,12 +12,13 @@ import type {
   ItemListFilters,
   ItemSort
 } from "../src/shared/types";
+import * as XLSX from "xlsx";
 import type { Env, ItemRow, ItemUpdateInput } from "./env";
-import { HttpError, escapeDelimitedCell, toIsoTimestamp } from "./utils";
+import { HttpError, toIsoTimestamp } from "./utils";
 
 const ALLOWED_CATEGORIES = new Set<string>(ITEM_CATEGORIES);
-const ALLOWED_STATUSES = new Set<string>(ITEM_STATUSES);
 const ALLOWED_SORTS = new Set<string>(ITEM_SORTS);
+const TEMPLATE_SHEET_NAME = "Inventory";
 const SHEET_HEADERS = [
   "id",
   "category",
@@ -30,12 +30,26 @@ const SHEET_HEADERS = [
   "purchase_source",
   "purchase_date",
   "expiry_date",
-  "status",
   "memo",
   "created_at",
   "updated_at"
 ] as const;
 const APP_TODAY_SQL = `date('now', '${APP_SQLITE_NOW_MODIFIER}')`;
+const SHEET_COLUMN_WIDTHS: XLSX.ColInfo[] = [
+  { wch: 18 },
+  { wch: 14 },
+  { wch: 16 },
+  { wch: 20 },
+  { wch: 14 },
+  { wch: 15 },
+  { wch: 16 },
+  { wch: 18 },
+  { wch: 15 },
+  { wch: 15 },
+  { wch: 28 },
+  { wch: 18 },
+  { wch: 18 }
+];
 
 export function toInventoryItem(row: ItemRow): InventoryItem {
   return {
@@ -49,7 +63,6 @@ export function toInventoryItem(row: ItemRow): InventoryItem {
     purchaseSource: row.purchase_source,
     purchaseDate: row.purchase_date,
     expiryDate: row.expiry_date,
-    status: row.status,
     memo: row.memo,
     createdAt: row.created_at,
     updatedAt: row.updated_at
@@ -70,7 +83,6 @@ export async function listItems(env: Env, filters: ItemListFilters): Promise<Inv
       purchase_source,
       purchase_date,
       expiry_date,
-      status,
       memo,
       created_at,
       updated_at
@@ -81,11 +93,6 @@ export async function listItems(env: Env, filters: ItemListFilters): Promise<Inv
   if (filters.category && filters.category !== "all") {
     sql += " AND category = ?";
     params.push(filters.category);
-  }
-
-  if (filters.status && filters.status !== "all") {
-    sql += " AND status = ?";
-    params.push(filters.status);
   }
 
   if (filters.restockOnly) {
@@ -132,7 +139,6 @@ export async function getItemById(env: Env, id: string): Promise<InventoryItem |
         purchase_source,
         purchase_date,
         expiry_date,
-        status,
         memo,
         created_at,
         updated_at
@@ -165,12 +171,11 @@ export async function createItem(env: Env, input: unknown): Promise<InventoryIte
         purchase_source,
         purchase_date,
         expiry_date,
-        status,
         memo,
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
   )
     .bind(
@@ -184,7 +189,6 @@ export async function createItem(env: Env, input: unknown): Promise<InventoryIte
       parsed.purchaseSource,
       parsed.purchaseDate,
       parsed.expiryDate,
-      parsed.status,
       parsed.memo,
       now,
       now
@@ -220,7 +224,6 @@ export async function updateItem(
   if ("purchaseSource" in parsed) fields.push(["purchase_source", parsed.purchaseSource]);
   if ("purchaseDate" in parsed) fields.push(["purchase_date", parsed.purchaseDate]);
   if ("expiryDate" in parsed) fields.push(["expiry_date", parsed.expiryDate]);
-  if ("status" in parsed) fields.push(["status", parsed.status]);
   if ("memo" in parsed) fields.push(["memo", parsed.memo]);
 
   if (fields.length === 0) {
@@ -281,7 +284,6 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
         purchase_source,
         purchase_date,
         expiry_date,
-        status,
         memo,
         created_at,
         updated_at
@@ -313,53 +315,74 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
   };
 }
 
-export async function exportItemsSheet(env: Env): Promise<string> {
+export async function exportItemsWorkbook(env: Env): Promise<ArrayBuffer> {
   const items = await listItems(env, { sort: "updated_desc" });
-  const rows = items.map((item) =>
-    [
-      item.id,
-      item.category,
-      item.brand,
-      item.name,
-      item.volumeOrUnit,
-      item.currentQuantity,
-      item.minimumQuantity,
-      item.purchaseSource,
-      item.purchaseDate,
-      item.expiryDate,
-      item.status,
-      item.memo,
-      item.createdAt,
-      item.updatedAt
-    ]
-      .map((value) => escapeDelimitedCell(value, "\t"))
-      .join("\t")
-  );
-
-  return [SHEET_HEADERS.join("\t"), ...rows].join("\n");
+  const workbook = XLSX.utils.book_new();
+  const rows = items.map((item) => [
+    item.id,
+    item.category,
+    item.brand,
+    item.name,
+    item.volumeOrUnit,
+    item.currentQuantity,
+    item.minimumQuantity,
+    item.purchaseSource,
+    item.purchaseDate,
+    item.expiryDate,
+    item.memo,
+    item.createdAt,
+    item.updatedAt
+  ]);
+  const worksheet = XLSX.utils.aoa_to_sheet([Array.from(SHEET_HEADERS), ...rows]);
+  worksheet["!cols"] = SHEET_COLUMN_WIDTHS;
+  worksheet["!autofilter"] = { ref: `A1:${getColumnName(SHEET_HEADERS.length)}1` };
+  XLSX.utils.book_append_sheet(workbook, worksheet, TEMPLATE_SHEET_NAME);
+  return XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array"
+  }) as ArrayBuffer;
 }
 
-export async function importItemsSheet(
+export async function importItemsWorkbook(
   env: Env,
-  sheetText: string
+  workbookBytes: ArrayBuffer
 ): Promise<ImportItemsResult> {
-  const rows = parseDelimited(sheetText, "\t", "스프레드시트");
+  const workbook = XLSX.read(workbookBytes, {
+    type: "array",
+    raw: false
+  });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) {
+    throw new HttpError(400, "엑셀 파일에 시트가 없습니다.");
+  }
+
+  const worksheet = workbook.Sheets[firstSheetName];
+  if (!worksheet) {
+    throw new HttpError(400, "엑셀 시트를 읽을 수 없습니다.");
+  }
+
+  const rows = XLSX.utils.sheet_to_json<string[]>(worksheet, {
+    header: 1,
+    raw: false,
+    defval: "",
+    blankrows: false
+  });
   if (rows.length === 0) {
-    throw new HttpError(400, "스프레드시트 데이터가 비어 있습니다.");
+    throw new HttpError(400, "엑셀 파일이 비어 있습니다.");
   }
 
   const headerRow = rows[0];
   if (!headerRow) {
-    throw new HttpError(400, "스프레드시트 헤더를 읽을 수 없습니다.");
+    throw new HttpError(400, "엑셀 헤더를 읽을 수 없습니다.");
   }
 
   const dataRows = rows.slice(1);
-  const normalizedHeaders = headerRow.map((value) => value.trim().replace(/^\uFEFF/, ""));
+  const normalizedHeaders = headerRow.map((value) => String(value).trim().replace(/^\uFEFF/, ""));
   if (
     normalizedHeaders.length !== SHEET_HEADERS.length ||
     normalizedHeaders.some((value, index) => value !== SHEET_HEADERS[index])
   ) {
-    throw new HttpError(400, "지원하지 않는 스프레드시트 형식입니다. 앱에서 복사한 헤더를 그대로 사용해주세요.");
+    throw new HttpError(400, "지원하지 않는 XLSX 형식입니다. 앱에서 내보낸 파일이나 템플릿 파일을 사용해주세요.");
   }
 
   let totalRows = 0;
@@ -373,7 +396,7 @@ export async function importItemsSheet(
       continue;
     }
 
-    if (row.every((value) => !value.trim())) {
+    if (row.every((value) => !String(value).trim())) {
       skippedCount += 1;
       continue;
     }
@@ -381,11 +404,11 @@ export async function importItemsSheet(
     totalRows += 1;
 
     if (row.length !== SHEET_HEADERS.length) {
-      throw new HttpError(400, `스프레드시트 ${index + 2}번째 줄 형식이 올바르지 않습니다.`);
+      throw new HttpError(400, `엑셀 ${index + 2}번째 줄 형식이 올바르지 않습니다.`);
     }
 
     const record = Object.fromEntries(
-      SHEET_HEADERS.map((header, columnIndex) => [header, row[columnIndex] ?? ""])
+      SHEET_HEADERS.map((header, columnIndex) => [header, String(row[columnIndex] ?? "")])
     ) as Record<(typeof SHEET_HEADERS)[number], string>;
 
     const itemId = record.id.trim() || crypto.randomUUID();
@@ -407,12 +430,11 @@ export async function importItemsSheet(
           purchase_source,
           purchase_date,
           expiry_date,
-          status,
           memo,
           created_at,
           updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           category = excluded.category,
           brand = excluded.brand,
@@ -423,7 +445,6 @@ export async function importItemsSheet(
           purchase_source = excluded.purchase_source,
           purchase_date = excluded.purchase_date,
           expiry_date = excluded.expiry_date,
-          status = excluded.status,
           memo = excluded.memo,
           created_at = excluded.created_at,
           updated_at = excluded.updated_at
@@ -440,7 +461,6 @@ export async function importItemsSheet(
         importedItem.purchaseSource,
         importedItem.purchaseDate,
         importedItem.expiryDate,
-        importedItem.status,
         importedItem.memo,
         importedItem.createdAt,
         importedItem.updatedAt
@@ -464,7 +484,6 @@ export async function importItemsSheet(
 
 export function parseFilters(url: URL): ItemListFilters {
   const category = url.searchParams.get("category");
-  const status = url.searchParams.get("status");
   const expiry = url.searchParams.get("expiry");
   const sort = url.searchParams.get("sort");
   const query = url.searchParams.get("query")?.trim();
@@ -472,10 +491,6 @@ export function parseFilters(url: URL): ItemListFilters {
   const parsedCategory: NonNullable<ItemListFilters["category"]> =
     category && (category === "all" || ALLOWED_CATEGORIES.has(category))
       ? (category as NonNullable<ItemListFilters["category"]>)
-      : "all";
-  const parsedStatus: NonNullable<ItemListFilters["status"]> =
-    status && (status === "all" || ALLOWED_STATUSES.has(status))
-      ? (status as NonNullable<ItemListFilters["status"]>)
       : "all";
   const parsedExpiry: NonNullable<ItemListFilters["expiry"]> =
     expiry === "expired" || expiry === "soon" || expiry === "all"
@@ -487,7 +502,6 @@ export function parseFilters(url: URL): ItemListFilters {
 
   return {
     category: parsedCategory,
-    status: parsedStatus,
     expiry: parsedExpiry,
     sort: parsedSort,
     query: query || "",
@@ -548,14 +562,6 @@ function validateItemInput(
 
   if (!partial || "expiryDate" in record) {
     output.expiryDate = toDateString(record.expiryDate, "expiryDate");
-  }
-
-  if (!partial || "status" in record) {
-    const status = toTrimmedString(record.status, "status");
-    if (!ALLOWED_STATUSES.has(status)) {
-      throw new HttpError(400, "Status is invalid.");
-    }
-    output.status = status as InventoryItem["status"];
   }
 
   if (!partial || "memo" in record) {
@@ -625,7 +631,6 @@ function toImportedItem(
     purchaseSource: record.purchase_source,
     purchaseDate: emptyToNull(record.purchase_date),
     expiryDate: emptyToNull(record.expiry_date),
-    status: record.status,
     memo: record.memo
   }) as InventoryItemInput;
 
@@ -639,7 +644,7 @@ function toImportedItem(
 function toImportedNumber(value: string, fieldName: string, rowNumber: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new HttpError(400, `스프레드시트 ${rowNumber}번째 줄의 ${fieldName} 값이 올바르지 않습니다.`);
+    throw new HttpError(400, `엑셀 ${rowNumber}번째 줄의 ${fieldName} 값이 올바르지 않습니다.`);
   }
   return parsed;
 }
@@ -652,7 +657,7 @@ function toImportedTimestamp(value: string): string {
 
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) {
-    throw new HttpError(400, "스프레드시트의 생성일 또는 수정일 형식이 올바르지 않습니다.");
+    throw new HttpError(400, "엑셀의 생성일 또는 수정일 형식이 올바르지 않습니다.");
   }
 
   return parsed.toISOString();
@@ -663,71 +668,13 @@ function emptyToNull(value: string): string | null {
   return trimmed ? trimmed : null;
 }
 
-function parseDelimited(
-  text: string,
-  delimiter: string,
-  sourceName: string
-): string[][] {
-  const rows: string[][] = [];
-  let currentRow: string[] = [];
-  let currentValue = "";
-  let inQuotes = false;
-
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index];
-    const nextChar = text[index + 1];
-
-    if (inQuotes) {
-      if (char === '"') {
-        if (nextChar === '"') {
-          currentValue += '"';
-          index += 1;
-        } else {
-          inQuotes = false;
-        }
-      } else if (char === "\r" && nextChar === "\n") {
-        currentValue += "\n";
-        index += 1;
-      } else {
-        currentValue += char;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      inQuotes = true;
-      continue;
-    }
-
-    if (char === delimiter) {
-      currentRow.push(currentValue);
-      currentValue = "";
-      continue;
-    }
-
-    if (char === "\n") {
-      currentRow.push(currentValue);
-      rows.push(currentRow);
-      currentRow = [];
-      currentValue = "";
-      continue;
-    }
-
-    if (char === "\r") {
-      continue;
-    }
-
-    currentValue += char;
+function getColumnName(index: number): string {
+  let current = index;
+  let name = "";
+  while (current > 0) {
+    const remainder = (current - 1) % 26;
+    name = String.fromCharCode(65 + remainder) + name;
+    current = Math.floor((current - 1) / 26);
   }
-
-  if (inQuotes) {
-    throw new HttpError(400, `${sourceName} 인용부호가 올바르게 닫히지 않았습니다.`);
-  }
-
-  if (currentValue || currentRow.length > 0) {
-    currentRow.push(currentValue);
-    rows.push(currentRow);
-  }
-
-  return rows;
+  return name;
 }

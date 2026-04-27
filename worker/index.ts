@@ -1,16 +1,11 @@
 import type { SessionInfo } from "../src/shared/types";
 import { cleanupExpiredSessions, createSession, destroySession, getAuthenticatedSession, verifyAdminPassword } from "./auth";
 import type { Env } from "./env";
-import { createItem, deleteItem, exportItemsSheet, getDashboardSummary, getItemById, importItemsSheet, listItems, parseFilters, updateItem } from "./items";
+import { createItem, deleteItem, exportItemsWorkbook, getDashboardSummary, getItemById, importItemsWorkbook, listItems, parseFilters, updateItem } from "./items";
 import { HttpError, errorResponse, json, readJson } from "./utils";
 
 interface LoginPayload {
   password?: string;
-}
-
-interface ImportPayload {
-  sheet?: string;
-  csv?: string;
 }
 
 export default {
@@ -41,12 +36,12 @@ export default {
       }
 
       if (request.method === "GET" && url.pathname === "/api/export") {
-        const sheet = await exportItemsSheet(env);
-        return new Response(sheet, {
+        const workbook = await exportItemsWorkbook(env);
+        return new Response(workbook, {
           status: 200,
           headers: {
-            "Content-Type": "text/tab-separated-values; charset=utf-8",
-            "Content-Disposition": 'attachment; filename="vanity-stock-export.tsv"',
+            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "Content-Disposition": 'attachment; filename="vanity-stock-export.xlsx"',
             "Cache-Control": "private, max-age=120"
           }
         });
@@ -151,17 +146,12 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
 }
 
 async function handleImport(request: Request, env: Env) {
-  const payload = await readJson<ImportPayload>(request);
-  const sheet = typeof payload.sheet === "string" && payload.sheet.trim()
-    ? payload.sheet
-    : typeof payload.csv === "string" && payload.csv.trim()
-      ? payload.csv
-      : "";
-  if (!sheet) {
-    throw new HttpError(400, "스프레드시트 내용이 필요합니다.");
+  const workbook = await request.arrayBuffer();
+  if (workbook.byteLength === 0) {
+    throw new HttpError(400, "엑셀 파일 내용이 필요합니다.");
   }
 
-  return importItemsSheet(env, sheet);
+  return importItemsWorkbook(env, workbook);
 }
 
 async function requireSession(request: Request, env: Env) {

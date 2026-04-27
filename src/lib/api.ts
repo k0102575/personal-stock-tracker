@@ -76,10 +76,6 @@ function buildItemsQuery(filters: ItemListFilters): string {
     params.set("category", filters.category);
   }
 
-  if (filters.status && filters.status !== "all") {
-    params.set("status", filters.status);
-  }
-
   if (filters.expiry && filters.expiry !== "all") {
     params.set("expiry", filters.expiry);
   }
@@ -143,11 +139,30 @@ export const api = {
       method: "DELETE"
     });
   },
-  importItems(sheet: string) {
-    return request<ImportItemsResult>("/api/import", {
+  async importItems(file: File) {
+    const response = await fetch("/api/import", {
       method: "POST",
-      body: JSON.stringify({ sheet })
+      headers: {
+        "Content-Type": file.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      },
+      body: await file.arrayBuffer(),
+      credentials: "same-origin"
     });
+
+    if (!response.ok) {
+      let message = "가져오기에 실패했습니다.";
+      try {
+        const payload = (await response.json()) as { error?: string };
+        if (payload.error) {
+          message = payload.error;
+        }
+      } catch {
+        message = response.statusText || message;
+      }
+      throw new ApiError(response.status, message);
+    }
+
+    return (await response.json()) as ImportItemsResult;
   },
   async exportItems() {
     const response = await fetch("/api/export", {
@@ -159,23 +174,13 @@ export const api = {
       throw new ApiError(response.status, "내보내기에 실패했습니다.");
     }
 
-    const sheetText = await response.text();
-
-    if (typeof navigator !== "undefined" && window.isSecureContext && navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(sheetText);
-      return "copied" as const;
-    }
-
-    const blob = new Blob([sheetText], {
-      type: "text/tab-separated-values;charset=utf-8"
-    });
+    const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `vanity-stock-sheet-${new Date().toISOString().slice(0, 10)}.tsv`;
+    link.download = `vanity-stock-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
     link.click();
     URL.revokeObjectURL(url);
-    return "downloaded" as const;
   }
 };
 

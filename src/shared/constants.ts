@@ -8,8 +8,6 @@ export const ITEM_CATEGORIES = [
   "etc"
 ] as const;
 
-export const ITEM_STATUSES = ["in_stock", "used_up"] as const;
-
 export const ITEM_SORTS = ["updated_desc", "expiry_asc", "name_asc"] as const;
 
 export const EXPIRY_FILTERS = ["all", "expired", "soon"] as const;

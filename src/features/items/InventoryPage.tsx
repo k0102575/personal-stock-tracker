@@ -16,12 +16,11 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "../../components/EmptyState";
 import { api, getErrorMessage } from "../../lib/api";
-import { ITEM_CATEGORIES, ITEM_SORTS, ITEM_STATUSES } from "../../shared/constants";
+import { ITEM_CATEGORIES, ITEM_SORTS } from "../../shared/constants";
 import {
   getCategoryLabel,
   getExpiryFilterLabel,
-  getSortLabel,
-  getStatusLabel
+  getSortLabel
 } from "../../shared/labels";
 import type { ItemListFilters } from "../../shared/types";
 import { ItemCard } from "./ItemCard";
@@ -29,7 +28,6 @@ import { ItemCard } from "./ItemCard";
 export function InventoryPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<NonNullable<ItemListFilters["category"]>>("all");
-  const [status, setStatus] = useState<NonNullable<ItemListFilters["status"]>>("all");
   const [expiry, setExpiry] = useState<NonNullable<ItemListFilters["expiry"]>>("all");
   const [sort, setSort] = useState<NonNullable<ItemListFilters["sort"]>>("updated_desc");
   const [restockOnly, setRestockOnly] = useState(false);
@@ -37,7 +35,6 @@ export function InventoryPage() {
 
   const filters: ItemListFilters = {
     category,
-    status,
     expiry,
     sort,
     query: deferredSearch,
@@ -59,8 +56,7 @@ export function InventoryPage() {
               <p className="eyebrow">보관함 둘러보기</p>
               <CardTitle>다시 사기 전에 먼저 검색해보세요</CardTitle>
               <CardDescription className="hidden sm:block">
-                카테고리, 재고 상태, 우선 유통기한을 조합해서 필요한 물건만 빠르게 걸러낼 수
-                있습니다.
+                카테고리와 우선 유통기한을 조합해서 필요한 물건만 빠르게 걸러낼 수 있습니다.
               </CardDescription>
             </div>
             <div className="hidden items-center gap-2 rounded-full bg-surface-container-lowest px-4 py-2 text-sm text-muted-foreground shadow-[0_8px_20px_rgba(47,52,48,0.03)] sm:inline-flex">
@@ -84,7 +80,7 @@ export function InventoryPage() {
             </div>
           </label>
 
-          <div className="grid gap-2.5 sm:gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-2.5 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
             <label className="field-stack block">
               <span className="field-label">카테고리</span>
               <Select
@@ -101,28 +97,6 @@ export function InventoryPage() {
                   {ITEM_CATEGORIES.map((entry) => (
                     <SelectItem key={entry} value={entry}>
                       {getCategoryLabel(entry)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-
-            <label className="field-stack block">
-              <span className="field-label">재고 상태</span>
-              <Select
-                value={status}
-                onValueChange={(value) =>
-                  setStatus(value as NonNullable<ItemListFilters["status"]>)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="상태 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">전체</SelectItem>
-                  {ITEM_STATUSES.map((entry) => (
-                    <SelectItem key={entry} value={entry}>
-                      {getStatusLabel(entry)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -180,7 +154,7 @@ export function InventoryPage() {
             >
               재구매 필요한 항목만 보기
             </Button>
-            {(search || category !== "all" || status !== "all" || expiry !== "all" || restockOnly) && (
+            {(search || category !== "all" || expiry !== "all" || restockOnly) && (
               <Button
                 className="w-full sm:w-auto"
                 type="button"
@@ -189,7 +163,6 @@ export function InventoryPage() {
                 onClick={() => {
                   setSearch("");
                   setCategory("all");
-                  setStatus("all");
                   setExpiry("all");
                   setSort("updated_desc");
                   setRestockOnly(false);
