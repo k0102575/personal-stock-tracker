@@ -143,10 +143,10 @@ export const api = {
       method: "DELETE"
     });
   },
-  importItems(csv: string) {
+  importItems(sheet: string) {
     return request<ImportItemsResult>("/api/import", {
       method: "POST",
-      body: JSON.stringify({ csv })
+      body: JSON.stringify({ sheet })
     });
   },
   async exportItems() {
@@ -159,13 +159,23 @@ export const api = {
       throw new ApiError(response.status, "내보내기에 실패했습니다.");
     }
 
-    const blob = await response.blob();
+    const sheetText = await response.text();
+
+    if (typeof navigator !== "undefined" && window.isSecureContext && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(sheetText);
+      return "copied" as const;
+    }
+
+    const blob = new Blob([sheetText], {
+      type: "text/tab-separated-values;charset=utf-8"
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `vanity-stock-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `vanity-stock-sheet-${new Date().toISOString().slice(0, 10)}.tsv`;
     link.click();
     URL.revokeObjectURL(url);
+    return "downloaded" as const;
   }
 };
 

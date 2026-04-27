@@ -19,7 +19,7 @@ Vanity Stock is a mobile-first PWA for tracking personal cosmetics, perfumes, oi
 - Dashboard with total items, low stock, expiring soon, expired, recent updates
 - Inventory list with search, category filter, status filter, expiry filter, restock-needed toggle, and sort controls
 - Item create, edit, delete, and detail screens
-- CSV export and import flow for backups and restore
+- Google 스프레드시트 복사/붙여넣기 기반 백업 및 복구
 - Installable PWA with offline app shell, runtime caching for recent API data, and update notifications
 
 ## Project Structure
@@ -77,7 +77,7 @@ Vanity Stock is a mobile-first PWA for tracking personal cosmetics, perfumes, oi
 ## Architecture
 
 - `src/`: React SPA, mobile-first layout, typed API client, route-based screens
-- `worker/`: Cloudflare Worker API for auth, session validation, CRUD routes, dashboard summary, and CSV export
+- `worker/`: Cloudflare Worker API for auth, session validation, CRUD routes, dashboard summary, and spreadsheet export/import
 - `migrations/`: D1 schema for `items` and `sessions`
 - `src/shared/`: shared frontend/backend TypeScript types and constants
 
@@ -98,7 +98,6 @@ For public GitHub safety, the real Wrangler config is not committed. This repo s
 - `minimum_quantity`
 - `purchase_source`
 - `purchase_date`
-- `opened_date`
 - `expiry_date`
 - `status`
 - `memo`

@@ -1,7 +1,7 @@
 import type { SessionInfo } from "../src/shared/types";
 import { cleanupExpiredSessions, createSession, destroySession, getAuthenticatedSession, verifyAdminPassword } from "./auth";
 import type { Env } from "./env";
-import { createItem, deleteItem, exportItemsCsv, getDashboardSummary, getItemById, importItemsCsv, listItems, parseFilters, updateItem } from "./items";
+import { createItem, deleteItem, exportItemsSheet, getDashboardSummary, getItemById, importItemsSheet, listItems, parseFilters, updateItem } from "./items";
 import { HttpError, errorResponse, json, readJson } from "./utils";
 
 interface LoginPayload {
@@ -9,6 +9,7 @@ interface LoginPayload {
 }
 
 interface ImportPayload {
+  sheet?: string;
   csv?: string;
 }
 
@@ -40,12 +41,12 @@ export default {
       }
 
       if (request.method === "GET" && url.pathname === "/api/export") {
-        const csv = await exportItemsCsv(env);
-        return new Response(csv, {
+        const sheet = await exportItemsSheet(env);
+        return new Response(sheet, {
           status: 200,
           headers: {
-            "Content-Type": "text/csv; charset=utf-8",
-            "Content-Disposition": 'attachment; filename="vanity-stock-export.csv"',
+            "Content-Type": "text/tab-separated-values; charset=utf-8",
+            "Content-Disposition": 'attachment; filename="vanity-stock-export.tsv"',
             "Cache-Control": "private, max-age=120"
           }
         });
@@ -151,11 +152,16 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
 
 async function handleImport(request: Request, env: Env) {
   const payload = await readJson<ImportPayload>(request);
-  if (typeof payload.csv !== "string" || !payload.csv.trim()) {
-    throw new HttpError(400, "CSV 내용이 필요합니다.");
+  const sheet = typeof payload.sheet === "string" && payload.sheet.trim()
+    ? payload.sheet
+    : typeof payload.csv === "string" && payload.csv.trim()
+      ? payload.csv
+      : "";
+  if (!sheet) {
+    throw new HttpError(400, "스프레드시트 내용이 필요합니다.");
   }
 
-  return importItemsCsv(env, payload.csv);
+  return importItemsSheet(env, sheet);
 }
 
 async function requireSession(request: Request, env: Env) {
