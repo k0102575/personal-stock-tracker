@@ -52,14 +52,14 @@ export function InventoryPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <Card className="sticky top-[6rem] z-20 bg-background sm:top-[7.75rem]">
+      <Card className="bg-background">
         <CardHeader className="space-y-2.5 sm:space-y-3">
           <div className="flex items-end justify-between gap-3">
             <div className="space-y-1.5 sm:space-y-2">
               <p className="eyebrow">보관함 둘러보기</p>
               <CardTitle>다시 사기 전에 먼저 검색해보세요</CardTitle>
               <CardDescription className="hidden sm:block">
-                카테고리, 상태, 우선 유통기한을 조합해서 필요한 물건만 빠르게 걸러낼 수
+                카테고리, 재고 상태, 우선 유통기한을 조합해서 필요한 물건만 빠르게 걸러낼 수
                 있습니다.
               </CardDescription>
             </div>
@@ -108,7 +108,7 @@ export function InventoryPage() {
             </label>
 
             <label className="field-stack block">
-              <span className="field-label">상태</span>
+              <span className="field-label">재고 상태</span>
               <Select
                 value={status}
                 onValueChange={(value) =>

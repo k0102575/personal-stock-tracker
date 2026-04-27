@@ -20,7 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { api, getErrorMessage } from "../../lib/api";
 import { getStockMeterValue, toFormDefaults } from "../../lib/inventory";
-import { ITEM_CATEGORIES, ITEM_STATUSES } from "../../shared/constants";
+import { ITEM_CATEGORIES } from "../../shared/constants";
 import {
   getCategoryLabel,
   getStatusDescription,
@@ -29,6 +29,10 @@ import {
 import type { InventoryItemInput } from "../../shared/types";
 
 type QuantityField = "currentQuantity" | "minimumQuantity";
+
+function RequiredMark() {
+  return <span className="ml-1 text-[1.05rem] font-bold leading-none text-red-600 sm:text-[1.15rem]">*</span>;
+}
 
 const EMPTY_FORM: InventoryItemInput = {
   category: "skincare",
@@ -39,9 +43,8 @@ const EMPTY_FORM: InventoryItemInput = {
   minimumQuantity: 1,
   purchaseSource: "",
   purchaseDate: null,
-  openedDate: null,
   expiryDate: null,
-  status: "active",
+  status: "in_stock",
   memo: ""
 };
 
@@ -131,7 +134,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
   function normalizeForm(value: InventoryItemInput): InventoryItemInput {
     return {
       ...value,
-      status: value.currentQuantity === 0 ? "used_up" : value.status
+      status: value.currentQuantity === 0 ? "used_up" : "in_stock"
     };
   }
 
@@ -169,6 +172,8 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
   const showQuantityPreview = mode === "edit" || hasEditedQuantity;
   const previewCurrentQuantity = parseQuantityDraft(quantityDrafts.currentQuantity);
   const previewMinimumQuantity = parseQuantityDraft(quantityDrafts.minimumQuantity);
+  const derivedStatus =
+    (previewCurrentQuantity ?? form.currentQuantity) === 0 ? "used_up" : "in_stock";
   const stockMeterTone = previewCurrentQuantity === 0 ? "danger" : "primary";
 
   return (
@@ -230,7 +235,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
           </CardHeader>
           <CardContent className="grid gap-3 sm:gap-4 md:grid-cols-2">
             <label className="field-stack block">
-              <span className="field-label">카테고리</span>
+              <span className="field-label">카테고리<RequiredMark /></span>
               <Select
                 value={form.category}
                 onValueChange={(value) =>
@@ -250,30 +255,16 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
               </Select>
             </label>
 
-            <label className="field-stack block">
-              <span className="field-label">상태</span>
-              <Select
-                value={form.status}
-                onValueChange={(value) =>
-                  updateField("status", value as InventoryItemInput["status"])
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="상태 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ITEM_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {getStatusLabel(status)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="field-hint">{getStatusDescription(form.status)}</span>
-            </label>
+            <div className="field-stack">
+              <span className="field-label">재고 상태</span>
+              <div className="flex min-h-11 items-center rounded-[1.2rem] border border-outline/70 bg-surface-container-low px-4 text-sm font-semibold text-foreground shadow-[0_10px_24px_rgba(47,52,48,0.04)]">
+                {getStatusLabel(derivedStatus)}
+              </div>
+              <span className="field-hint">{getStatusDescription(derivedStatus)}</span>
+            </div>
 
             <label className="field-stack block md:col-span-2">
-              <span className="field-label">품목명</span>
+              <span className="field-label">품목명<RequiredMark /></span>
               <Input
                 value={form.name}
                 onChange={(event) => updateField("name", event.target.value)}
@@ -316,7 +307,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
           </CardHeader>
           <CardContent className="grid gap-3 sm:gap-4 md:grid-cols-2">
             <label className="field-stack block">
-              <span className="field-label">현재 수량</span>
+              <span className="field-label">현재 수량<RequiredMark /></span>
               <Input
                 inputMode="numeric"
                 min="0"
@@ -330,15 +321,13 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
                   ? "처음 등록하는 시점의 실제 보유 수량을 적어주세요."
                   : "지금 남아 있는 수량을 기준으로 입력해주세요."}
               </span>
-              {previewCurrentQuantity === 0 && form.status !== "used_up" && (
-                <span className="field-hint">
-                  수량이 0이면 저장 시 상태가 `사용 완료`로 반영됩니다.
-                </span>
-              )}
+              <span className="field-hint">
+                수량이 1 이상이면 `재고 있음`, 0이면 `사용 완료`로 저장됩니다.
+              </span>
             </label>
 
             <label className="field-stack block">
-              <span className="field-label">기준 수량</span>
+              <span className="field-label">기준 수량<RequiredMark /></span>
               <Input
                 inputMode="numeric"
                 min="0"
@@ -358,15 +347,6 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
                 type="date"
                 value={form.purchaseDate ?? ""}
                 onChange={(event) => updateField("purchaseDate", event.target.value || null)}
-              />
-            </label>
-
-            <label className="field-stack block">
-              <span className="field-label">개봉일</span>
-              <Input
-                type="date"
-                value={form.openedDate ?? ""}
-                onChange={(event) => updateField("openedDate", event.target.value || null)}
               />
             </label>
 

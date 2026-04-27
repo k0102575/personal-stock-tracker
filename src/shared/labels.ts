@@ -13,9 +13,8 @@ const CATEGORY_LABELS: Record<ItemCategory, string> = {
 };
 
 const STATUS_LABELS: Record<ItemStatus, string> = {
-  active: "사용 중",
-  used_up: "사용 완료",
-  archived: "보관 중"
+  in_stock: "재고 있음",
+  used_up: "사용 완료"
 };
 
 const SORT_LABELS: Record<ItemSort, string> = {
@@ -39,15 +38,11 @@ export function getStatusLabel(status: ItemStatus): string {
 }
 
 export function getStatusDescription(status: ItemStatus): string {
-  if (status === "active") {
-    return "현재 실제로 사용하고 있는 상태예요.";
+  if (status === "in_stock") {
+    return "서랍장에 아직 재고가 남아 있어서 다시 사기 전에 먼저 확인하면 좋은 상태예요.";
   }
 
-  if (status === "used_up") {
-    return "다 써서 남아 있는 수량이 없는 상태예요.";
-  }
-
-  return "구매는 했지만 아직 사용하지 않고 보관 중인 상태예요.";
+  return "남아 있는 수량이 없어 재구매를 검토할 수 있는 상태예요.";
 }
 
 export function getSortLabel(sort: ItemSort): string {

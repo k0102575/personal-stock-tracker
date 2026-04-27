@@ -14,12 +14,12 @@ import type {
   ItemSort
 } from "../src/shared/types";
 import type { Env, ItemRow, ItemUpdateInput } from "./env";
-import { HttpError, escapeCsvCell, toIsoTimestamp } from "./utils";
+import { HttpError, escapeDelimitedCell, toIsoTimestamp } from "./utils";
 
 const ALLOWED_CATEGORIES = new Set<string>(ITEM_CATEGORIES);
 const ALLOWED_STATUSES = new Set<string>(ITEM_STATUSES);
 const ALLOWED_SORTS = new Set<string>(ITEM_SORTS);
-const CSV_HEADERS = [
+const SHEET_HEADERS = [
   "id",
   "category",
   "brand",
@@ -29,7 +29,6 @@ const CSV_HEADERS = [
   "minimum_quantity",
   "purchase_source",
   "purchase_date",
-  "opened_date",
   "expiry_date",
   "status",
   "memo",
@@ -49,7 +48,6 @@ export function toInventoryItem(row: ItemRow): InventoryItem {
     minimumQuantity: Number(row.minimum_quantity),
     purchaseSource: row.purchase_source,
     purchaseDate: row.purchase_date,
-    openedDate: row.opened_date,
     expiryDate: row.expiry_date,
     status: row.status,
     memo: row.memo,
@@ -71,7 +69,6 @@ export async function listItems(env: Env, filters: ItemListFilters): Promise<Inv
       minimum_quantity,
       purchase_source,
       purchase_date,
-      opened_date,
       expiry_date,
       status,
       memo,
@@ -134,7 +131,6 @@ export async function getItemById(env: Env, id: string): Promise<InventoryItem |
         minimum_quantity,
         purchase_source,
         purchase_date,
-        opened_date,
         expiry_date,
         status,
         memo,
@@ -168,14 +164,13 @@ export async function createItem(env: Env, input: unknown): Promise<InventoryIte
         minimum_quantity,
         purchase_source,
         purchase_date,
-        opened_date,
         expiry_date,
         status,
         memo,
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
   )
     .bind(
@@ -188,7 +183,6 @@ export async function createItem(env: Env, input: unknown): Promise<InventoryIte
       parsed.minimumQuantity,
       parsed.purchaseSource,
       parsed.purchaseDate,
-      parsed.openedDate,
       parsed.expiryDate,
       parsed.status,
       parsed.memo,
@@ -225,7 +219,6 @@ export async function updateItem(
   if ("minimumQuantity" in parsed) fields.push(["minimum_quantity", parsed.minimumQuantity]);
   if ("purchaseSource" in parsed) fields.push(["purchase_source", parsed.purchaseSource]);
   if ("purchaseDate" in parsed) fields.push(["purchase_date", parsed.purchaseDate]);
-  if ("openedDate" in parsed) fields.push(["opened_date", parsed.openedDate]);
   if ("expiryDate" in parsed) fields.push(["expiry_date", parsed.expiryDate]);
   if ("status" in parsed) fields.push(["status", parsed.status]);
   if ("memo" in parsed) fields.push(["memo", parsed.memo]);
@@ -287,7 +280,6 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
         minimum_quantity,
         purchase_source,
         purchase_date,
-        opened_date,
         expiry_date,
         status,
         memo,
@@ -321,7 +313,7 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
   };
 }
 
-export async function exportItemsCsv(env: Env): Promise<string> {
+export async function exportItemsSheet(env: Env): Promise<string> {
   const items = await listItems(env, { sort: "updated_desc" });
   const rows = items.map((item) =>
     [
@@ -334,41 +326,40 @@ export async function exportItemsCsv(env: Env): Promise<string> {
       item.minimumQuantity,
       item.purchaseSource,
       item.purchaseDate,
-      item.openedDate,
       item.expiryDate,
       item.status,
       item.memo,
       item.createdAt,
       item.updatedAt
     ]
-      .map(escapeCsvCell)
-      .join(",")
+      .map((value) => escapeDelimitedCell(value, "\t"))
+      .join("\t")
   );
 
-  return [CSV_HEADERS.join(","), ...rows].join("\n");
+  return [SHEET_HEADERS.join("\t"), ...rows].join("\n");
 }
 
-export async function importItemsCsv(
+export async function importItemsSheet(
   env: Env,
-  csvText: string
+  sheetText: string
 ): Promise<ImportItemsResult> {
-  const rows = parseCsv(csvText);
+  const rows = parseDelimited(sheetText, "\t", "스프레드시트");
   if (rows.length === 0) {
-    throw new HttpError(400, "CSV 파일이 비어 있습니다.");
+    throw new HttpError(400, "스프레드시트 데이터가 비어 있습니다.");
   }
 
   const headerRow = rows[0];
   if (!headerRow) {
-    throw new HttpError(400, "CSV 헤더를 읽을 수 없습니다.");
+    throw new HttpError(400, "스프레드시트 헤더를 읽을 수 없습니다.");
   }
 
   const dataRows = rows.slice(1);
   const normalizedHeaders = headerRow.map((value) => value.trim().replace(/^\uFEFF/, ""));
   if (
-    normalizedHeaders.length !== CSV_HEADERS.length ||
-    normalizedHeaders.some((value, index) => value !== CSV_HEADERS[index])
+    normalizedHeaders.length !== SHEET_HEADERS.length ||
+    normalizedHeaders.some((value, index) => value !== SHEET_HEADERS[index])
   ) {
-    throw new HttpError(400, "지원하지 않는 CSV 형식입니다. 앱에서 내보낸 파일을 사용해주세요.");
+    throw new HttpError(400, "지원하지 않는 스프레드시트 형식입니다. 앱에서 복사한 헤더를 그대로 사용해주세요.");
   }
 
   let totalRows = 0;
@@ -389,13 +380,13 @@ export async function importItemsCsv(
 
     totalRows += 1;
 
-    if (row.length !== CSV_HEADERS.length) {
-      throw new HttpError(400, `CSV ${index + 2}번째 줄 형식이 올바르지 않습니다.`);
+    if (row.length !== SHEET_HEADERS.length) {
+      throw new HttpError(400, `스프레드시트 ${index + 2}번째 줄 형식이 올바르지 않습니다.`);
     }
 
     const record = Object.fromEntries(
-      CSV_HEADERS.map((header, columnIndex) => [header, row[columnIndex] ?? ""])
-    ) as Record<(typeof CSV_HEADERS)[number], string>;
+      SHEET_HEADERS.map((header, columnIndex) => [header, row[columnIndex] ?? ""])
+    ) as Record<(typeof SHEET_HEADERS)[number], string>;
 
     const itemId = record.id.trim() || crypto.randomUUID();
     const existing = await env.DB.prepare("SELECT id FROM items WHERE id = ? LIMIT 1")
@@ -415,14 +406,13 @@ export async function importItemsCsv(
           minimum_quantity,
           purchase_source,
           purchase_date,
-          opened_date,
           expiry_date,
           status,
           memo,
           created_at,
           updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           category = excluded.category,
           brand = excluded.brand,
@@ -432,7 +422,6 @@ export async function importItemsCsv(
           minimum_quantity = excluded.minimum_quantity,
           purchase_source = excluded.purchase_source,
           purchase_date = excluded.purchase_date,
-          opened_date = excluded.opened_date,
           expiry_date = excluded.expiry_date,
           status = excluded.status,
           memo = excluded.memo,
@@ -450,7 +439,6 @@ export async function importItemsCsv(
         importedItem.minimumQuantity,
         importedItem.purchaseSource,
         importedItem.purchaseDate,
-        importedItem.openedDate,
         importedItem.expiryDate,
         importedItem.status,
         importedItem.memo,
@@ -558,10 +546,6 @@ function validateItemInput(
     output.purchaseDate = toDateString(record.purchaseDate, "purchaseDate");
   }
 
-  if (!partial || "openedDate" in record) {
-    output.openedDate = toDateString(record.openedDate, "openedDate");
-  }
-
   if (!partial || "expiryDate" in record) {
     output.expiryDate = toDateString(record.expiryDate, "expiryDate");
   }
@@ -628,7 +612,7 @@ function toDateString(value: unknown, fieldName: string): string | null {
 }
 
 function toImportedItem(
-  record: Record<(typeof CSV_HEADERS)[number], string>,
+  record: Record<(typeof SHEET_HEADERS)[number], string>,
   rowNumber: number
 ): InventoryItemInput & { createdAt: string; updatedAt: string } {
   const input = validateItemInput({
@@ -640,7 +624,6 @@ function toImportedItem(
     minimumQuantity: toImportedNumber(record.minimum_quantity, "minimum_quantity", rowNumber),
     purchaseSource: record.purchase_source,
     purchaseDate: emptyToNull(record.purchase_date),
-    openedDate: emptyToNull(record.opened_date),
     expiryDate: emptyToNull(record.expiry_date),
     status: record.status,
     memo: record.memo
@@ -656,7 +639,7 @@ function toImportedItem(
 function toImportedNumber(value: string, fieldName: string, rowNumber: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new HttpError(400, `CSV ${rowNumber}번째 줄의 ${fieldName} 값이 올바르지 않습니다.`);
+    throw new HttpError(400, `스프레드시트 ${rowNumber}번째 줄의 ${fieldName} 값이 올바르지 않습니다.`);
   }
   return parsed;
 }
@@ -669,7 +652,7 @@ function toImportedTimestamp(value: string): string {
 
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) {
-    throw new HttpError(400, "CSV의 생성일 또는 수정일 형식이 올바르지 않습니다.");
+    throw new HttpError(400, "스프레드시트의 생성일 또는 수정일 형식이 올바르지 않습니다.");
   }
 
   return parsed.toISOString();
@@ -680,7 +663,11 @@ function emptyToNull(value: string): string | null {
   return trimmed ? trimmed : null;
 }
 
-function parseCsv(text: string): string[][] {
+function parseDelimited(
+  text: string,
+  delimiter: string,
+  sourceName: string
+): string[][] {
   const rows: string[][] = [];
   let currentRow: string[] = [];
   let currentValue = "";
@@ -712,7 +699,7 @@ function parseCsv(text: string): string[][] {
       continue;
     }
 
-    if (char === ",") {
+    if (char === delimiter) {
       currentRow.push(currentValue);
       currentValue = "";
       continue;
@@ -734,7 +721,7 @@ function parseCsv(text: string): string[][] {
   }
 
   if (inQuotes) {
-    throw new HttpError(400, "CSV 인용부호가 올바르게 닫히지 않았습니다.");
+    throw new HttpError(400, `${sourceName} 인용부호가 올바르게 닫히지 않았습니다.`);
   }
 
   if (currentValue || currentRow.length > 0) {

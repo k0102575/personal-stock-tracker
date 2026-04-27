@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { importItemsCsv } from "./items";
+import { importItemsSheet } from "./items";
 import type { Env } from "./env";
 
 interface StoredItemRecord {
@@ -12,7 +12,6 @@ interface StoredItemRecord {
   minimum_quantity: number;
   purchase_source: string;
   purchase_date: string | null;
-  opened_date: string | null;
   expiry_date: string | null;
   status: string;
   memo: string;
@@ -20,8 +19,8 @@ interface StoredItemRecord {
   updated_at: string;
 }
 
-const CSV_HEADER =
-  "id,category,brand,name,volume_or_unit,current_quantity,minimum_quantity,purchase_source,purchase_date,opened_date,expiry_date,status,memo,created_at,updated_at";
+const SHEET_HEADER =
+  "id\tcategory\tbrand\tname\tvolume_or_unit\tcurrent_quantity\tminimum_quantity\tpurchase_source\tpurchase_date\texpiry_date\tstatus\tmemo\tcreated_at\tupdated_at";
 
 class FakeD1Database {
   readonly items = new Map<string, StoredItemRecord>();
@@ -66,7 +65,6 @@ class FakeStatement {
         minimumQuantity,
         purchaseSource,
         purchaseDate,
-        openedDate,
         expiryDate,
         status,
         memo,
@@ -84,7 +82,6 @@ class FakeStatement {
         minimum_quantity: Number(minimumQuantity),
         purchase_source: String(purchaseSource),
         purchase_date: toNullableString(purchaseDate),
-        opened_date: toNullableString(openedDate),
         expiry_date: toNullableString(expiryDate),
         status: String(status),
         memo: String(memo),
@@ -114,15 +111,15 @@ function toNullableString(value: unknown): string | null {
   return value == null ? null : String(value);
 }
 
-describe("importItemsCsv", () => {
-  it("creates and updates rows from exported CSV", async () => {
+describe("importItemsSheet", () => {
+  it("creates and updates rows from exported sheet text", async () => {
     const env = createEnv();
-    const createdCsv = [
-      CSV_HEADER,
-      "item-1,skincare,브랜드A,크림,50ml,2,1,올리브영,2026-04-01,2026-04-02,2026-05-01,active,첫 메모,2026-04-01T00:00:00.000Z,2026-04-02T00:00:00.000Z"
+    const createdSheet = [
+      SHEET_HEADER,
+      "item-1\tskincare\t브랜드A\t크림\t50ml\t2\t1\t올리브영\t2026-04-01\t2026-05-01\tin_stock\t첫 메모\t2026-04-01T00:00:00.000Z\t2026-04-02T00:00:00.000Z"
     ].join("\n");
 
-    await expect(importItemsCsv(env, createdCsv)).resolves.toEqual({
+    await expect(importItemsSheet(env, createdSheet)).resolves.toEqual({
       totalRows: 1,
       createdCount: 1,
       updatedCount: 0,
@@ -130,12 +127,12 @@ describe("importItemsCsv", () => {
     });
     expect(env.DB.items.get("item-1")?.name).toBe("크림");
 
-    const updatedCsv = [
-      CSV_HEADER,
-      "item-1,skincare,브랜드B,크림 리필,70ml,1,1,공식몰,2026-04-03,2026-04-04,2026-05-30,active,수정 메모,2026-04-01T00:00:00.000Z,2026-04-03T00:00:00.000Z"
+    const updatedSheet = [
+      SHEET_HEADER,
+      "item-1\tskincare\t브랜드B\t크림 리필\t70ml\t1\t1\t공식몰\t2026-04-03\t2026-05-30\tin_stock\t수정 메모\t2026-04-01T00:00:00.000Z\t2026-04-03T00:00:00.000Z"
     ].join("\n");
 
-    await expect(importItemsCsv(env, updatedCsv)).resolves.toEqual({
+    await expect(importItemsSheet(env, updatedSheet)).resolves.toEqual({
       totalRows: 1,
       createdCount: 0,
       updatedCount: 1,
@@ -148,12 +145,12 @@ describe("importItemsCsv", () => {
     });
   });
 
-  it("rejects unsupported CSV headers", async () => {
+  it("rejects unsupported sheet headers", async () => {
     const env = createEnv();
 
-    await expect(importItemsCsv(env, "name,brand\n크림,브랜드")).rejects.toMatchObject({
+    await expect(importItemsSheet(env, "name\tbrand\n크림\t브랜드")).rejects.toMatchObject({
       status: 400,
-      message: "지원하지 않는 CSV 형식입니다. 앱에서 내보낸 파일을 사용해주세요."
+      message: "지원하지 않는 스프레드시트 형식입니다. 앱에서 복사한 헤더를 그대로 사용해주세요."
     });
   });
 });

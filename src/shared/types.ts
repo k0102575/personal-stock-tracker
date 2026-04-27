@@ -20,7 +20,6 @@ export interface InventoryItem {
   minimumQuantity: number;
   purchaseSource: string;
   purchaseDate: string | null;
-  openedDate: string | null;
   expiryDate: string | null;
   status: ItemStatus;
   memo: string;
@@ -37,7 +36,6 @@ export interface InventoryItemInput {
   minimumQuantity: number;
   purchaseSource: string;
   purchaseDate: string | null;
-  openedDate: string | null;
   expiryDate: string | null;
   status: ItemStatus;
   memo: string;

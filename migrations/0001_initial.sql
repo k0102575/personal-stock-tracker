@@ -8,9 +8,8 @@ CREATE TABLE IF NOT EXISTS items (
   minimum_quantity REAL NOT NULL DEFAULT 0,
   purchase_source TEXT NOT NULL DEFAULT '',
   purchase_date TEXT,
-  opened_date TEXT,
   expiry_date TEXT,
-  status TEXT NOT NULL DEFAULT 'active',
+  status TEXT NOT NULL DEFAULT 'in_stock',
   memo TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP

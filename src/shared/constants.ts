@@ -8,7 +8,7 @@ export const ITEM_CATEGORIES = [
   "etc"
 ] as const;
 
-export const ITEM_STATUSES = ["active", "used_up", "archived"] as const;
+export const ITEM_STATUSES = ["in_stock", "used_up"] as const;
 
 export const ITEM_SORTS = ["updated_desc", "expiry_asc", "name_asc"] as const;
 

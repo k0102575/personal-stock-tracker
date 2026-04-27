@@ -123,9 +123,8 @@ export function toFormDefaults(item?: InventoryItem) {
     minimumQuantity: Math.round(item?.minimumQuantity ?? 1),
     purchaseSource: item?.purchaseSource ?? "",
     purchaseDate: item?.purchaseDate ?? null,
-    openedDate: item?.openedDate ?? null,
     expiryDate: item?.expiryDate ?? null,
-    status: item?.status ?? "active",
+    status: item?.status ?? "in_stock",
     memo: item?.memo ?? ""
   };
 }

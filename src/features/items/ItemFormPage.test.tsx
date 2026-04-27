@@ -62,9 +62,8 @@ function createCreatedItem(): InventoryItem {
     minimumQuantity: 1,
     purchaseSource: "",
     purchaseDate: null,
-    openedDate: null,
     expiryDate: null,
-    status: "active",
+    status: "in_stock",
     memo: "",
     createdAt: "2026-04-10T00:00:00.000Z",
     updatedAt: "2026-04-10T00:00:00.000Z"
