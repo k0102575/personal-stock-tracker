@@ -55,7 +55,7 @@ export function AppShell() {
 
   return (
     <div className="page-shell">
-      <header className="sticky top-3 z-40 sm:top-4">
+      <header>
         <div className="glass-panel rounded-[1.5rem] px-4 py-3 sm:rounded-[2rem] sm:px-6 sm:py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div className="space-y-2 sm:space-y-3">
