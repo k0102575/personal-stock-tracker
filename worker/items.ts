@@ -12,6 +12,8 @@ import type {
   ItemListFilters,
   ItemSort
 } from "../src/shared/types";
+import { getInventorySignals } from "../src/lib/inventory";
+import { groupInventoryItems, type InventoryItemGroup } from "../src/lib/itemGroups";
 import * as XLSX from "xlsx";
 import type { Env, ItemRow, ItemUpdateInput } from "./env";
 import { HttpError, toIsoTimestamp } from "./utils";
@@ -251,76 +253,15 @@ export async function deleteItem(env: Env, id: string): Promise<boolean> {
 }
 
 export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
-  const counts = await env.DB.prepare(
-    `
-      SELECT
-        (SELECT COUNT(*) FROM items) AS total_items,
-        (SELECT COUNT(*) FROM items WHERE current_quantity <= minimum_quantity) AS low_stock_count,
-        (SELECT COUNT(*) FROM items WHERE expiry_date IS NOT NULL AND date(expiry_date) < ${APP_TODAY_SQL}) AS expired_count,
-        (
-          SELECT COUNT(*)
-          FROM items
-          WHERE expiry_date IS NOT NULL
-          AND date(expiry_date) BETWEEN ${APP_TODAY_SQL} AND date(${APP_TODAY_SQL}, '+${EXPIRY_SOON_DAYS} day')
-        ) AS expiring_soon_count
-    `
-  ).first<{
-    total_items: number;
-    low_stock_count: number;
-    expired_count: number;
-    expiring_soon_count: number;
-  }>();
-
-  const lowStockResult = await env.DB.prepare(
-    `
-      SELECT
-        id,
-        category,
-        brand,
-        name,
-        volume_or_unit,
-        current_quantity,
-        minimum_quantity,
-        purchase_source,
-        purchase_date,
-        expiry_date,
-        memo,
-        created_at,
-        updated_at
-      FROM items
-      WHERE current_quantity <= minimum_quantity
-      ORDER BY
-        (minimum_quantity - current_quantity) DESC,
-        expiry_date IS NULL ASC,
-        expiry_date ASC,
-        updated_at DESC
-      LIMIT 3
-    `
-  ).all<ItemRow>();
-
-  const expiringSoonResult = await env.DB.prepare(
-    `
-      SELECT
-        id,
-        category,
-        brand,
-        name,
-        volume_or_unit,
-        current_quantity,
-        minimum_quantity,
-        purchase_source,
-        purchase_date,
-        expiry_date,
-        memo,
-        created_at,
-        updated_at
-      FROM items
-      WHERE expiry_date IS NOT NULL
-      AND date(expiry_date) BETWEEN ${APP_TODAY_SQL} AND date(${APP_TODAY_SQL}, '+${EXPIRY_SOON_DAYS} day')
-      ORDER BY expiry_date ASC, updated_at DESC
-      LIMIT 3
-    `
-  ).all<ItemRow>();
+  const allItems = await listItems(env, { sort: "updated_desc" });
+  const itemGroups = groupInventoryItems(allItems, "updated_desc");
+  const lowStockGroups = itemGroups
+    .filter((group) => getInventorySignals(group.item).lowStock)
+    .sort(compareLowStockGroups);
+  const expiredGroups = itemGroups.filter((group) => getInventorySignals(group.item).expired);
+  const expiringSoonGroups = itemGroups
+    .filter((group) => getInventorySignals(group.item).expiringSoon)
+    .sort(compareExpiryGroups);
 
   const categoryResult = await env.DB.prepare(
     `
@@ -332,17 +273,55 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
   ).all<{ category: InventoryItem["category"]; count: number }>();
 
   return {
-    totalItems: Number(counts?.total_items ?? 0),
-    lowStockCount: Number(counts?.low_stock_count ?? 0),
-    expiredCount: Number(counts?.expired_count ?? 0),
-    expiringSoonCount: Number(counts?.expiring_soon_count ?? 0),
-    lowStockItems: lowStockResult.results.map(toInventoryItem),
-    expiringSoonItems: expiringSoonResult.results.map(toInventoryItem),
+    totalItems: allItems.length,
+    lowStockCount: lowStockGroups.length,
+    expiredCount: expiredGroups.length,
+    expiringSoonCount: expiringSoonGroups.length,
+    lowStockItems: lowStockGroups.slice(0, 3).map((group) => group.item),
+    expiringSoonItems: expiringSoonGroups.slice(0, 3).map((group) => group.item),
     categories: categoryResult.results.map((row) => ({
       category: row.category,
       count: Number(row.count)
     }))
   };
+}
+
+function compareLowStockGroups(a: InventoryItemGroup, b: InventoryItemGroup): number {
+  const aDeficit = a.item.minimumQuantity - a.item.currentQuantity;
+  const bDeficit = b.item.minimumQuantity - b.item.currentQuantity;
+  const deficitComparison = bDeficit - aDeficit;
+
+  if (deficitComparison !== 0) {
+    return deficitComparison;
+  }
+
+  return compareExpiryGroups(a, b);
+}
+
+function compareExpiryGroups(a: InventoryItemGroup, b: InventoryItemGroup): number {
+  const expiryComparison = compareNullableDate(a.item.expiryDate, b.item.expiryDate);
+
+  if (expiryComparison !== 0) {
+    return expiryComparison;
+  }
+
+  return b.item.updatedAt.localeCompare(a.item.updatedAt);
+}
+
+function compareNullableDate(a: string | null, b: string | null): number {
+  if (!a && !b) {
+    return 0;
+  }
+
+  if (!a) {
+    return 1;
+  }
+
+  if (!b) {
+    return -1;
+  }
+
+  return a.localeCompare(b);
 }
 
 export async function exportItemsWorkbook(env: Env): Promise<ArrayBuffer> {

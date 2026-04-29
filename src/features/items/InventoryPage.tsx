@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "../../components/EmptyState";
 import { api, getErrorMessage } from "../../lib/api";
+import { getInventorySignals } from "../../lib/inventory";
 import { groupInventoryItems } from "../../lib/itemGroups";
 import { EXPIRY_FILTERS, ITEM_CATEGORIES, ITEM_SORTS } from "../../shared/constants";
 import {
@@ -131,10 +132,8 @@ export function InventoryPage() {
 
   const filters: ItemListFilters = {
     category,
-    expiry,
     sort,
-    query: deferredSearch,
-    restockOnly
+    query: deferredSearch
   };
 
   const itemsQuery = useQuery({
@@ -142,7 +141,24 @@ export function InventoryPage() {
     queryFn: () => api.getItems(filters),
     placeholderData: keepPreviousData
   });
-  const itemGroups = groupInventoryItems(itemsQuery.data ?? [], sort);
+  const itemGroups = groupInventoryItems(itemsQuery.data ?? [], sort).filter((group) => {
+    const signals = getInventorySignals(group.item);
+
+    if (restockOnly && !signals.lowStock) {
+      return false;
+    }
+
+    if (expiry === "expired") {
+      return signals.expired;
+    }
+
+    if (expiry === "soon") {
+      return signals.expiringSoon;
+    }
+
+    return true;
+  });
+  const visibleItemCount = itemGroups.reduce((count, group) => count + group.items.length, 0);
 
   return (
     <div className="space-y-3 sm:space-y-7">
@@ -272,7 +288,7 @@ export function InventoryPage() {
         <div className="inline-alert" role="alert">
           {getErrorMessage(itemsQuery.error)}
         </div>
-      ) : itemsQuery.data.length === 0 ? (
+      ) : itemGroups.length === 0 ? (
         <EmptyState
           title="조건에 맞는 품목이 없습니다"
           description="필터를 조금 완화하거나 새 품목을 등록해서 여기서 관리해보세요."
@@ -284,12 +300,12 @@ export function InventoryPage() {
           <div className="flex flex-col gap-0.5 border-b border-outline-variant pb-2 sm:flex-row sm:items-end sm:justify-between sm:pb-4">
             <div>
               <h2 className="font-serif text-[1.1rem] font-medium uppercase tracking-[-0.04em] text-foreground sm:text-[2.8rem]">
-                총 {itemsQuery.data.length}개 품목
+                총 {visibleItemCount}개 품목
               </h2>
               <p className="text-[10px] text-muted-foreground sm:mt-2 sm:text-sm">
-                {itemGroups.length === itemsQuery.data.length
+                {itemGroups.length === visibleItemCount
                   ? "한 번 열어본 항목은 오프라인에서도 다시 확인할 수 있어요."
-                  : `${itemsQuery.data.length}개 품목을 ${itemGroups.length}개 카드로 묶어서 보여줍니다.`}
+                  : `${visibleItemCount}개 품목을 ${itemGroups.length}개 카드로 묶어서 보여줍니다.`}
               </p>
             </div>
           </div>
