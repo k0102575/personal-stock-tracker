@@ -271,7 +271,7 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
     expiring_soon_count: number;
   }>();
 
-  const recentResult = await env.DB.prepare(
+  const lowStockResult = await env.DB.prepare(
     `
       SELECT
         id,
@@ -288,8 +288,37 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
         created_at,
         updated_at
       FROM items
-      ORDER BY updated_at DESC
-      LIMIT 5
+      WHERE current_quantity <= minimum_quantity
+      ORDER BY
+        (minimum_quantity - current_quantity) DESC,
+        expiry_date IS NULL ASC,
+        expiry_date ASC,
+        updated_at DESC
+      LIMIT 3
+    `
+  ).all<ItemRow>();
+
+  const expiringSoonResult = await env.DB.prepare(
+    `
+      SELECT
+        id,
+        category,
+        brand,
+        name,
+        volume_or_unit,
+        current_quantity,
+        minimum_quantity,
+        purchase_source,
+        purchase_date,
+        expiry_date,
+        memo,
+        created_at,
+        updated_at
+      FROM items
+      WHERE expiry_date IS NOT NULL
+      AND date(expiry_date) BETWEEN ${APP_TODAY_SQL} AND date(${APP_TODAY_SQL}, '+${EXPIRY_SOON_DAYS} day')
+      ORDER BY expiry_date ASC, updated_at DESC
+      LIMIT 3
     `
   ).all<ItemRow>();
 
@@ -307,7 +336,8 @@ export async function getDashboardSummary(env: Env): Promise<DashboardSummary> {
     lowStockCount: Number(counts?.low_stock_count ?? 0),
     expiredCount: Number(counts?.expired_count ?? 0),
     expiringSoonCount: Number(counts?.expiring_soon_count ?? 0),
-    recentItems: recentResult.results.map(toInventoryItem),
+    lowStockItems: lowStockResult.results.map(toInventoryItem),
+    expiringSoonItems: expiringSoonResult.results.map(toInventoryItem),
     categories: categoryResult.results.map((row) => ({
       category: row.category,
       count: Number(row.count)

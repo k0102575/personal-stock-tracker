@@ -13,6 +13,6 @@ export const ITEM_SORTS = ["updated_desc", "expiry_asc", "name_asc"] as const;
 export const EXPIRY_FILTERS = ["all", "expired", "soon"] as const;
 
 export const DEFAULT_SESSION_TTL_DAYS = 14;
-export const EXPIRY_SOON_DAYS = 30;
+export const EXPIRY_SOON_DAYS = 90;
 export const APP_TIME_ZONE = "Asia/Seoul";
 export const APP_SQLITE_NOW_MODIFIER = "+9 hours";

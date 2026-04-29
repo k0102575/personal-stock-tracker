@@ -55,7 +55,8 @@ export interface DashboardSummary {
   lowStockCount: number;
   expiredCount: number;
   expiringSoonCount: number;
-  recentItems: InventoryItem[];
+  lowStockItems: InventoryItem[];
+  expiringSoonItems: InventoryItem[];
   categories: CategoryCount[];
 }
 

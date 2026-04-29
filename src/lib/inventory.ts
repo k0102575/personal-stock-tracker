@@ -1,24 +1,24 @@
-import { APP_TIME_ZONE, EXPIRY_SOON_DAYS } from "../shared/constants";
-import { getCategoryLabel } from "../shared/labels";
-import type { InventoryItem } from "../shared/types";
+import { APP_TIME_ZONE, EXPIRY_SOON_DAYS } from '../shared/constants';
+import { getCategoryLabel } from '../shared/labels';
+import type { InventoryItem } from '../shared/types';
 
-const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  timeZone: APP_TIME_ZONE
+const dateFormatter = new Intl.DateTimeFormat('ko-KR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  timeZone: APP_TIME_ZONE,
 });
 
-const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  timeZone: APP_TIME_ZONE
+const dayKeyFormatter = new Intl.DateTimeFormat('en-CA', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  timeZone: APP_TIME_ZONE,
 });
 
 export function formatDate(value: string | null): string {
   if (!value) {
-    return "미입력";
+    return '미입력';
   }
 
   const parsed = parseDateForDisplay(value);
@@ -36,14 +36,14 @@ export function getInventorySignals(item: InventoryItem) {
   const expired = Boolean(expiry && expiry < todayKey);
   const expiringSoon = Boolean(
     expiry &&
-      expiry >= todayKey &&
-      getDaysBetween(todayKey, expiry) <= EXPIRY_SOON_DAYS
+    expiry >= todayKey &&
+    getDaysBetween(todayKey, expiry) <= EXPIRY_SOON_DAYS,
   );
 
   return {
     lowStock,
     expired,
-    expiringSoon
+    expiringSoon,
   };
 }
 
@@ -57,23 +57,25 @@ export function getMinimumLabel(item: InventoryItem): string {
 
 export function getItemSubtitle(item: InventoryItem): string {
   const pieces = [item.brand, item.volumeOrUnit].filter(Boolean);
-  return pieces.length > 0 ? pieces.join(" / ") : getCategoryLabel(item.category);
+  return pieces.length > 0
+    ? pieces.join(' / ')
+    : getCategoryLabel(item.category);
 }
 
-export function getItemInitials(item: Pick<InventoryItem, "brand" | "name">): string {
+export function getItemInitials(item: Pick<InventoryItem, 'brand' | 'name'>): string {
   const source = item.brand || item.name;
 
   return source
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
 }
 
 export function getStockMeterValue(
-  item: Pick<InventoryItem, "currentQuantity" | "minimumQuantity">,
-  segments = 6
+  item: Pick<InventoryItem, 'currentQuantity' | 'minimumQuantity'>,
+  segments = 6,
 ): number {
   if (item.currentQuantity <= 0) {
     return 0;
@@ -115,21 +117,21 @@ export function getDaysUntil(value: string | null): number | null {
 
 export function toFormDefaults(item?: InventoryItem) {
   return {
-    category: item?.category ?? "skincare",
-    brand: item?.brand ?? "",
-    name: item?.name ?? "",
-    volumeOrUnit: item?.volumeOrUnit ?? "",
+    category: item?.category ?? 'skincare',
+    brand: item?.brand ?? '',
+    name: item?.name ?? '',
+    volumeOrUnit: item?.volumeOrUnit ?? '',
     currentQuantity: Math.round(item?.currentQuantity ?? 1),
     minimumQuantity: Math.round(item?.minimumQuantity ?? 1),
-    purchaseSource: item?.purchaseSource ?? "",
+    purchaseSource: item?.purchaseSource ?? '',
     purchaseDate: item?.purchaseDate ?? null,
     expiryDate: item?.expiryDate ?? null,
-    memo: item?.memo ?? ""
+    memo: item?.memo ?? '',
   };
 }
 
 export function trimTrailingZeros(value: number): string {
-  return value % 1 === 0 ? String(value) : value.toFixed(1).replace(/\.0$/, "");
+  return value % 1 === 0 ? String(value) : value.toFixed(1).replace(/\.0$/, '');
 }
 
 function parseDateForDisplay(value: string): Date | null {
@@ -148,7 +150,7 @@ function getTodayKey(): string {
 
 function getDaysBetween(fromDate: string, toDate: string): number {
   return Math.round(
-    (toUtcDayValue(toDate) - toUtcDayValue(fromDate)) / (24 * 60 * 60 * 1000)
+    (toUtcDayValue(toDate) - toUtcDayValue(fromDate)) / (24 * 60 * 60 * 1000),
   );
 }
 
@@ -161,8 +163,12 @@ function isDateOnly(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-function parseDateParts(value: string): { year: number; month: number; day: number } {
-  const parts = value.split("-");
+function parseDateParts(value: string): {
+  year: number;
+  month: number;
+  day: number;
+} {
+  const parts = value.split('-');
   const year = Number(parts[0]);
   const month = Number(parts[1]);
   const day = Number(parts[2]);

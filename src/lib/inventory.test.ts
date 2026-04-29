@@ -42,6 +42,14 @@ describe("inventory utils", () => {
       expired: false,
       expiringSoon: true
     });
+    expect(getInventorySignals(createItem({ expiryDate: "2026-07-09" }))).toMatchObject({
+      expired: false,
+      expiringSoon: true
+    });
+    expect(getInventorySignals(createItem({ expiryDate: "2026-07-10" }))).toMatchObject({
+      expired: false,
+      expiringSoon: false
+    });
   });
 
   it("returns remaining days from the same Korea time baseline", () => {
