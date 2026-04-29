@@ -169,3 +169,12 @@
     display: none;
   }
 }
+
+@media (max-width: 640px) {
+  input[type],
+  input:not([type]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
