@@ -12,12 +12,14 @@ const {
   navigateMock,
   createItemMock,
   updateItemMock,
-  getItemMock
+  getItemMock,
+  getItemsMock
 } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
   createItemMock: vi.fn(),
   updateItemMock: vi.fn(),
-  getItemMock: vi.fn()
+  getItemMock: vi.fn(),
+  getItemsMock: vi.fn()
 }));
 
 vi.mock("react-router-dom", async () => {
@@ -32,7 +34,8 @@ vi.mock("../../lib/api", () => ({
   api: {
     createItem: createItemMock,
     updateItem: updateItemMock,
-    getItem: getItemMock
+    getItem: getItemMock,
+    getItems: getItemsMock
   },
   getErrorMessage: (error: unknown) =>
     error instanceof Error ? error.message : "문제가 발생했습니다."
@@ -110,8 +113,10 @@ describe("ItemFormPage", () => {
     createItemMock.mockReset();
     updateItemMock.mockReset();
     getItemMock.mockReset();
+    getItemsMock.mockReset();
     navigateMock.mockReset();
     createItemMock.mockResolvedValue(createCreatedItem());
+    getItemsMock.mockResolvedValue([]);
   });
 
   it("prevents submitting when a quantity field is cleared", async () => {
@@ -143,6 +148,31 @@ describe("ItemFormPage", () => {
 
     expect(await screen.findByDisplayValue("쿠션")).toBeTruthy();
     expect(screen.getByRole("combobox").textContent).toContain("메이크업");
+  });
+
+  it("fills brand and category from a name autocomplete suggestion", async () => {
+    const user = userEvent.setup();
+    getItemsMock.mockResolvedValue([
+      {
+        ...createCreatedItem(),
+        id: "suggestion",
+        category: "bodycare",
+        brand: "논픽션",
+        name: "핸드크림"
+      }
+    ]);
+
+    renderPage();
+
+    await user.type(
+      screen.getByPlaceholderText("시카 크림, 핸드크림, 향수처럼 입력해보세요"),
+      "핸드"
+    );
+    await user.click(await screen.findByRole("button", { name: /핸드크림/ }));
+
+    expect(screen.getByDisplayValue("핸드크림")).toBeTruthy();
+    expect(screen.getByDisplayValue("논픽션")).toBeTruthy();
+    expect(screen.getByRole("combobox").textContent).toContain("바디케어");
   });
 
   it("submits zero quantity intentionally", async () => {

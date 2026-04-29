@@ -22,9 +22,10 @@ import { api, getErrorMessage } from "../../lib/api";
 import { getStockMeterValue, toFormDefaults } from "../../lib/inventory";
 import { ITEM_CATEGORIES } from "../../shared/constants";
 import { getCategoryLabel } from "../../shared/labels";
-import type { InventoryItemInput } from "../../shared/types";
+import type { InventoryItem, InventoryItemInput } from "../../shared/types";
 
 type QuantityField = "currentQuantity" | "minimumQuantity";
+type NameSuggestion = Pick<InventoryItem, "id" | "brand" | "category" | "name">;
 
 function RequiredMark() {
   return <span className="ml-1 text-[1.05rem] font-bold leading-none text-red-600 sm:text-[1.15rem]">*</span>;
@@ -48,6 +49,37 @@ const EMPTY_QUANTITY_DRAFTS: Record<QuantityField, string> = {
   minimumQuantity: String(EMPTY_FORM.minimumQuantity)
 };
 
+function getNameSuggestions(items: InventoryItem[], query: string): NameSuggestion[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+
+  return items
+    .filter((item) => item.name.toLowerCase().includes(normalizedQuery))
+    .filter((item) => {
+      const key = [
+        item.name.trim().toLowerCase(),
+        item.brand.trim().toLowerCase(),
+        item.category
+      ].join("|");
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 6)
+    .map((item) => ({
+      id: item.id,
+      brand: item.brand,
+      category: item.category,
+      name: item.name
+    }));
+}
+
 export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
   const { id = "" } = useParams();
   const navigate = useNavigate();
@@ -57,11 +89,18 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
     useState<Record<QuantityField, string>>(EMPTY_QUANTITY_DRAFTS);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [hasEditedQuantity, setHasEditedQuantity] = useState(mode === "edit");
+  const [isNameSuggestionOpen, setIsNameSuggestionOpen] = useState(false);
 
   const itemQuery = useQuery({
     queryKey: ["item", id],
     queryFn: () => api.getItem(id),
     enabled: mode === "edit"
+  });
+
+  const autocompleteQuery = useQuery({
+    queryKey: ["items", "name-autocomplete"],
+    queryFn: () => api.getItems({ sort: "updated_desc" }),
+    enabled: mode === "create"
   });
 
   useEffect(() => {
@@ -89,7 +128,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
   });
 
   if (mode === "edit" && itemQuery.isPending) {
-    return <Card>품목 정보를 불러오는 중입니다...</Card>;
+    return <Card className="content-card p-4 sm:p-6">품목 정보를 불러오는 중입니다...</Card>;
   }
 
   if (mode === "edit" && itemQuery.isError) {
@@ -126,6 +165,16 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
     };
   }
 
+  function applyNameSuggestion(suggestion: NameSuggestion) {
+    setForm((current) => ({
+      ...current,
+      name: suggestion.name,
+      brand: suggestion.brand,
+      category: suggestion.category
+    }));
+    setIsNameSuggestionOpen(false);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -159,10 +208,13 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
   const previewCurrentQuantity = parseQuantityDraft(quantityDrafts.currentQuantity);
   const previewMinimumQuantity = parseQuantityDraft(quantityDrafts.minimumQuantity);
   const stockMeterTone = previewCurrentQuantity === 0 ? "danger" : "primary";
+  const nameSuggestions = getNameSuggestions(autocompleteQuery.data ?? [], form.name);
+  const showNameSuggestions =
+    mode === "create" && isNameSuggestionOpen && nameSuggestions.length > 0;
 
   return (
     <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
-      <Card className="bg-surface-container-lowest">
+      <Card className="content-card">
         <CardContent className="flex flex-col gap-4 px-4 py-4 sm:gap-5 sm:px-6 sm:py-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-2.5 sm:gap-3">
             <PackagePlus className="mt-1 size-5 text-primary" />
@@ -213,11 +265,62 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
       </Card>
 
       <div className="space-y-4 sm:space-y-6">
-        <Card>
+        <Card className="content-card">
           <CardHeader>
             <CardTitle className="text-2xl">기본 정보</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 sm:gap-4 md:grid-cols-2">
+            <div className="field-stack block md:col-span-2">
+              <label className="field-label" htmlFor="item-name">
+                품목명<RequiredMark />
+              </label>
+              <div className="relative">
+                <Input
+                  id="item-name"
+                  value={form.name}
+                  onBlur={() => setIsNameSuggestionOpen(false)}
+                  onChange={(event) => {
+                    updateField("name", event.target.value);
+                    setIsNameSuggestionOpen(true);
+                  }}
+                  onFocus={() => setIsNameSuggestionOpen(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      setIsNameSuggestionOpen(false);
+                    }
+                  }}
+                  placeholder="시카 크림, 핸드크림, 향수처럼 입력해보세요"
+                />
+                {showNameSuggestions && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-[1rem] border border-outline-variant bg-surface-container-lowest shadow-[0_18px_45px_rgba(0,0,0,0.12)]">
+                    <p className="border-b border-outline-variant px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      기존 품목에서 자동완성
+                    </p>
+                    <div className="max-h-64 overflow-y-auto">
+                      {nameSuggestions.map((suggestion) => (
+                        <button
+                          key={`${suggestion.id}-${suggestion.name}-${suggestion.brand}-${suggestion.category}`}
+                          className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-container focus-visible:bg-surface-container focus-visible:outline-none"
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            applyNameSuggestion(suggestion);
+                          }}
+                          type="button"
+                        >
+                          <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                            {suggestion.name}
+                          </span>
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {suggestion.brand || "브랜드 미입력"} / {getCategoryLabel(suggestion.category)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <label className="field-stack block">
               <span className="field-label">카테고리<RequiredMark /></span>
               <Select
@@ -240,15 +343,6 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
               </Select>
             </label>
 
-            <label className="field-stack block md:col-span-2">
-              <span className="field-label">품목명<RequiredMark /></span>
-              <Input
-                value={form.name}
-                onChange={(event) => updateField("name", event.target.value)}
-                placeholder="시카 크림, 핸드크림, 향수처럼 입력해보세요"
-              />
-            </label>
-
             <label className="field-stack block">
               <span className="field-label">브랜드</span>
               <Input
@@ -267,7 +361,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
               />
             </label>
 
-            <label className="field-stack block md:col-span-2">
+            <label className="field-stack block">
               <span className="field-label">구매처</span>
               <Input
                 value={form.purchaseSource}
@@ -278,7 +372,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="content-card">
           <CardHeader>
             <CardTitle className="text-2xl">수량과 일정</CardTitle>
           </CardHeader>
@@ -324,7 +418,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
               />
             </label>
 
-            <label className="field-stack block md:col-span-2">
+            <label className="field-stack block">
               <span className="field-label">우선 유통기한</span>
               <Input
                 type="date"
@@ -335,7 +429,7 @@ export function ItemFormPage({ mode }: { mode: "create" | "edit" }) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="content-card">
           <CardHeader>
             <CardTitle className="text-2xl">메모</CardTitle>
           </CardHeader>
