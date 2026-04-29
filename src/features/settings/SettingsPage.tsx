@@ -49,7 +49,7 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <Card className="bg-surface-container-lowest">
+      <Card className="content-card">
         <CardHeader className="flex-row items-start gap-2.5 sm:gap-3">
           <Lock className="mt-1 size-5 text-primary" />
           <div className="space-y-1.5 sm:space-y-2">
@@ -70,7 +70,7 @@ export function SettingsPage() {
       </Card>
 
       <div className="grid gap-4 sm:gap-6 xl:grid-cols-2">
-        <Card>
+        <Card className="content-card">
           <CardHeader className="flex-row items-start gap-2.5 sm:gap-3">
             <Wifi className="mt-1 size-5 text-primary" />
             <div className="space-y-1.5 sm:space-y-2">
@@ -90,7 +90,7 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-surface-container-lowest">
+        <Card className="content-card">
           <CardHeader className="flex-row items-start gap-2.5 sm:gap-3">
             <Download className="mt-1 size-5 text-primary" />
             <div className="space-y-1.5 sm:space-y-2">
@@ -120,7 +120,7 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="content-card">
           <CardHeader className="flex-row items-start gap-2.5 sm:gap-3">
             <Upload className="mt-1 size-5 text-primary" />
             <div className="space-y-1.5 sm:space-y-2">

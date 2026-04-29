@@ -30,7 +30,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex h-10 w-full items-center justify-between gap-2 rounded-3xl bg-surface-container px-4 py-2.5 text-left text-sm text-foreground transition-[color,box-shadow,background-color] outline-none placeholder:text-muted-foreground data-[placeholder]:text-muted-foreground focus-visible:bg-surface-container-lowest focus-visible:ring-4 focus-visible:ring-ring/80 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 sm:h-12 sm:py-3",
+        "flex h-10 w-full items-center justify-between gap-2 rounded-[0.5rem] border border-outline-variant bg-surface-container px-4 py-2.5 text-left text-sm text-foreground transition-[color,box-shadow,background-color,border-color] outline-none placeholder:text-muted-foreground data-[placeholder]:text-muted-foreground focus-visible:border-foreground focus-visible:bg-surface-container-lowest focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 sm:h-12 sm:py-3",
         className
       )}
       {...props}
@@ -54,7 +54,7 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "relative z-50 max-h-96 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-[1.5rem] bg-surface-container-lowest p-1 text-foreground shadow-[var(--shadow-soft)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 origin-(--radix-select-content-transform-origin)",
+          "relative z-50 max-h-96 min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-[1rem] border border-outline-variant bg-surface-container-lowest p-1 text-foreground shadow-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 origin-(--radix-select-content-transform-origin)",
           position === "popper" &&
             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className

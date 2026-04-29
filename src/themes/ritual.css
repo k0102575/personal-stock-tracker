@@ -2,45 +2,45 @@
 .theme-ritual {
   color-scheme: light;
   --font-body:
-    "Manrope",
-    "SUIT Variable",
-    "Pretendard Variable",
+    "Helvetica Neue",
+    "Helvetica",
+    "Arial",
     "Noto Sans KR",
     "Apple SD Gothic Neo",
     sans-serif;
   --font-display:
-    "Noto Serif",
-    "Iowan Old Style",
-    "Apple SD Gothic Neo",
-    serif;
-  --background: #faf9f6;
-  --foreground: #2f3430;
-  --muted-foreground: #5c605c;
-  --surface: #faf9f6;
+    "Oswald",
+    "Helvetica Neue",
+    "Arial Narrow",
+    sans-serif;
+  --background: #ffffff;
+  --foreground: #111111;
+  --muted-foreground: #707072;
+  --surface: #ffffff;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f4f4f0;
-  --surface-container: #edeeea;
-  --surface-container-high: #e6e9e4;
-  --surface-container-highest: #e0e4de;
-  --surface-bright: #faf9f6;
-  --surface-glass: rgba(250, 249, 246, 0.8);
-  --primary: #586249;
-  --primary-dim: #4c563e;
-  --primary-foreground: #f1fcdc;
-  --primary-container: #dce7c8;
-  --secondary: #665d56;
-  --secondary-container: #ede0d6;
-  --tertiary: #6a5d4b;
-  --tertiary-container: #feebd4;
-  --error: #9e422c;
-  --error-dim: #742410;
-  --error-container: #fe8b70;
-  --outline: #777c77;
-  --outline-variant: #afb3ae;
-  --ring: rgba(88, 98, 73, 0.18);
-  --radius: 1.5rem;
-  --radius-lg: 2rem;
+  --surface-container-low: #fafafa;
+  --surface-container: #f5f5f5;
+  --surface-container-high: #e5e5e5;
+  --surface-container-highest: #cacacb;
+  --surface-bright: #ffffff;
+  --surface-glass: rgba(255, 255, 255, 0.94);
+  --primary: #111111;
+  --primary-dim: #707072;
+  --primary-foreground: #ffffff;
+  --primary-container: #f5f5f5;
+  --secondary: #111111;
+  --secondary-container: #f5f5f5;
+  --tertiary: #111111;
+  --tertiary-container: #f5f5f5;
+  --error: #d30005;
+  --error-dim: #d30005;
+  --error-container: #ffe5e5;
+  --outline: #707072;
+  --outline-variant: #cacacb;
+  --ring: rgba(39, 93, 197, 1);
+  --radius: 1.25rem;
+  --radius-lg: 1.5rem;
   --radius-pill: 9999px;
-  --shadow-ambient: 0 12px 32px rgba(47, 52, 48, 0.04);
-  --shadow-soft: 0 20px 50px rgba(47, 52, 48, 0.04);
+  --shadow-ambient: none;
+  --shadow-soft: none;
 }

@@ -9,7 +9,7 @@ interface StockMeterProps {
 
 const toneClassName: Record<NonNullable<StockMeterProps["tone"]>, string> = {
   primary: "bg-primary",
-  warning: "bg-tertiary",
+  warning: "bg-foreground",
   danger: "bg-error"
 };
 
