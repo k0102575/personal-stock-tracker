@@ -10,89 +10,95 @@ interface LoginPayload {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
-
-    try {
-      if (!url.pathname.startsWith("/api/")) {
-        return errorResponse(404, "Not found.");
-      }
-
-      if (request.method === "POST" && url.pathname === "/api/login") {
-        return await handleLogin(request, env, ctx);
-      }
-
-      if (request.method === "POST" && url.pathname === "/api/logout") {
-        return await handleLogout(request, env);
-      }
-
-      if (request.method === "GET" && url.pathname === "/api/me") {
-        return await handleMe(request, env);
-      }
-
-      await requireSession(request, env);
-
-      if (request.method === "GET" && url.pathname === "/api/dashboard-summary") {
-        return json(await getDashboardSummary(env));
-      }
-
-      if (request.method === "GET" && url.pathname === "/api/export") {
-        const workbook = await exportItemsWorkbook(env);
-        return new Response(workbook, {
-          status: 200,
-          headers: {
-            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "Content-Disposition": 'attachment; filename="vanity-stock-export.xlsx"',
-            "Cache-Control": "private, max-age=120"
-          }
-        });
-      }
-
-      if (request.method === "GET" && url.pathname === "/api/items") {
-        return json(await listItems(env, parseFilters(url)));
-      }
-
-      if (request.method === "POST" && url.pathname === "/api/items") {
-        return json(await createItem(env, await readJson(request)), { status: 201 });
-      }
-
-      if (request.method === "POST" && url.pathname === "/api/import") {
-        return json(await handleImport(request, env), { status: 201 });
-      }
-
-      const itemIdMatch = url.pathname.match(/^\/api\/items\/([^/]+)$/);
-      if (itemIdMatch) {
-        const rawItemId = itemIdMatch[1];
-        if (!rawItemId) {
-          return errorResponse(400, "Item id is missing.");
-        }
-        const itemId = decodeURIComponent(rawItemId);
-
-        if (request.method === "GET") {
-          const item = await getItemById(env, itemId);
-          return item ? json(item) : errorResponse(404, "Item not found.");
-        }
-
-        if (request.method === "PATCH") {
-          return json(await updateItem(env, itemId, await readJson(request)));
-        }
-
-        if (request.method === "DELETE") {
-          const deleted = await deleteItem(env, itemId);
-          return deleted ? new Response(null, { status: 204 }) : errorResponse(404, "Item not found.");
-        }
-      }
-
-      return errorResponse(404, "Route not found.");
-    } catch (error) {
-      if (error instanceof HttpError) {
-        return errorResponse(error.status, error.message);
-      }
-
-      console.error("Unhandled API error", { error });
-      return errorResponse(500, "Unexpected server error.");
-    }
+    const response = await handleRequest(request, env, ctx);
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    return response;
   }
 };
+
+async function handleRequest(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  const url = new URL(request.url);
+
+  try {
+    if (!url.pathname.startsWith("/api/")) {
+      return errorResponse(404, "Not found.");
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/login") {
+      return await handleLogin(request, env, ctx);
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/logout") {
+      return await handleLogout(request, env);
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/me") {
+      return await handleMe(request, env);
+    }
+
+    await requireSession(request, env);
+
+    if (request.method === "GET" && url.pathname === "/api/dashboard-summary") {
+      return json(await getDashboardSummary(env));
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/export") {
+      const workbook = await exportItemsWorkbook(env);
+      return new Response(workbook, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": 'attachment; filename="vanity-stock-export.xlsx"',
+          "Cache-Control": "private, max-age=120"
+        }
+      });
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/items") {
+      return json(await listItems(env, parseFilters(url)));
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/items") {
+      return json(await createItem(env, await readJson(request)), { status: 201 });
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/import") {
+      return json(await handleImport(request, env), { status: 201 });
+    }
+
+    const itemIdMatch = url.pathname.match(/^\/api\/items\/([^/]+)$/);
+    if (itemIdMatch) {
+      const rawItemId = itemIdMatch[1];
+      if (!rawItemId) {
+        return errorResponse(400, "Item id is missing.");
+      }
+      const itemId = decodeURIComponent(rawItemId);
+
+      if (request.method === "GET") {
+        const item = await getItemById(env, itemId);
+        return item ? json(item) : errorResponse(404, "Item not found.");
+      }
+
+      if (request.method === "PATCH") {
+        return json(await updateItem(env, itemId, await readJson(request)));
+      }
+
+      if (request.method === "DELETE") {
+        const deleted = await deleteItem(env, itemId);
+        return deleted ? new Response(null, { status: 204 }) : errorResponse(404, "Item not found.");
+      }
+    }
+
+    return errorResponse(404, "Route not found.");
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return errorResponse(error.status, error.message);
+    }
+
+    console.error("Unhandled API error", { error });
+    return errorResponse(500, "Unexpected server error.");
+  }
+}
 
 async function handleLogin(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const payload = await readJson<LoginPayload>(request);

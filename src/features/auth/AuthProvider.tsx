@@ -3,7 +3,7 @@ import {
   useQuery,
   useQueryClient
 } from "@tanstack/react-query";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
 import type { SessionInfo } from "../../shared/types";
 import { api, ApiError } from "../../lib/api";
 import { clearOfflineCache, saveOfflineCache } from "../../lib/offlineCache";
@@ -27,6 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const sessionQuery = useQuery({
     queryKey: ["session"],
+    // A known anonymous visitor needs no background session checks.
+    staleTime: (query) => query.state.data === null ? Infinity : 30_000,
+    retry: false,
+    refetchOnWindowFocus: (query) => Boolean(query.state.data),
+    refetchOnReconnect: (query) => Boolean(query.state.data),
     queryFn: async () => {
       try {
         return await api.getMe();
@@ -38,6 +43,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
   });
+
+  useEffect(() => {
+    const session = sessionQuery.data;
+    if (!session) return;
+
+    function expireSession() {
+      queryClient.setQueryData(["session"], null);
+      clearOfflineCache();
+    }
+    // Keep expiry enforcement even while the session query is fresh/offline.
+    let timer: number;
+    function scheduleExpiry() {
+      const remaining = Date.parse(session!.expiresAt) - Date.now();
+      if (!Number.isFinite(remaining) || remaining <= 0) {
+        expireSession();
+        return;
+      }
+      timer = window.setTimeout(scheduleExpiry, Math.min(remaining, 2_147_483_647));
+    }
+    scheduleExpiry();
+    return () => window.clearTimeout(timer);
+  }, [queryClient, sessionQuery.data]);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      queryClient.setQueryData(["session"], null);
+      clearOfflineCache();
+    }
+    window.addEventListener("session-expired", handleUnauthorized);
+    return () => window.removeEventListener("session-expired", handleUnauthorized);
+  }, [queryClient]);
 
   const loginMutation = useMutation({
     mutationFn: api.login,
@@ -52,7 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSuccess: async () => {
       queryClient.setQueryData(["session"], null);
       clearOfflineCache();
-      await queryClient.invalidateQueries();
+      await queryClient.cancelQueries({ predicate: (query) => query.queryKey[0] !== "session" });
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== "session" });
     }
   });
 

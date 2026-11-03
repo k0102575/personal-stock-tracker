@@ -46,6 +46,9 @@ async function request<T>(
       } catch {
         message = response.statusText || message;
       }
+      if (response.status === 401 && path !== "/api/login") {
+        window.dispatchEvent(new Event("session-expired"));
+      }
       throw new ApiError(response.status, message);
     }
 
@@ -61,7 +64,8 @@ async function request<T>(
   } catch (error) {
     if (method === "GET" && cacheKey && !(error instanceof ApiError)) {
       const cached = readOfflineCache<T>(cacheKey);
-      if (cached) {
+      if (cached && (cacheKey !== "session" ||
+        Date.parse((cached.data as SessionInfo).expiresAt) > Date.now())) {
         return cached.data;
       }
     }
@@ -159,6 +163,7 @@ export const api = {
       } catch {
         message = response.statusText || message;
       }
+      if (response.status === 401) window.dispatchEvent(new Event("session-expired"));
       throw new ApiError(response.status, message);
     }
 
@@ -171,6 +176,7 @@ export const api = {
     });
 
     if (!response.ok) {
+      if (response.status === 401) window.dispatchEvent(new Event("session-expired"));
       throw new ApiError(response.status, "내보내기에 실패했습니다.");
     }
 
